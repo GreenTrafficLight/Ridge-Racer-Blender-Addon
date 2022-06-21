@@ -1,3 +1,4 @@
+from Utilities.vector import Vector3
 from .r6o import *
 
 class R6C:
@@ -84,7 +85,8 @@ class R6C:
         self.structures["SHADOW"]  = (r6o, indexes)
 
 class R6C_TRANSFORMATION:
-    def __init__(self):
+    
+    def __init__(self, binaryReader):
         self.mesh_index = 0
         self.unknown = None
         self.unknown2 = None
@@ -92,3 +94,9 @@ class R6C_TRANSFORMATION:
         self.unknown3 = None
         self.unknown4 = None
         self.scale = None
+
+    def read_transformation(self, binaryReader):
+
+        self.mesh_index = binaryReader.readUShort()
+        binaryReader.seek(6, 1)
+        self.translation = Vector3.fromBytes(binaryReader.readBytes(12))
