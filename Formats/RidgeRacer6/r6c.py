@@ -1,10 +1,11 @@
-from Utilities.vector import Vector3
+from ...Utilities import *
 from .r6o import *
+
+from mathutils import *
 
 class R6C:
 
-    def __init__(self, br):
-        self.br = br
+    def __init__(self):
 
         self.structures = {
             "LOD0" : None,
@@ -14,89 +15,101 @@ class R6C:
             "SHADOW" : None
         }
 
-        self.br.seek(8, 1) # ???
+        self.transformations = {}
 
         self.offsetList = []
 
-        self.get_offsets(6)
+    def read(self, binaryReader):
 
-        self.br.seek(12, 1) # ???
-        self.br.seek(28, 1) # ???
-        self.br.seek(4, 1) # zeros ?
+        binaryReader.seek(8, 1) # ???
 
-        self.get_offsets(5)
+        self.get_offsets(binaryReader, 6)
+
+        binaryReader.seek(12, 1) # ???
+        binaryReader.seek(28, 1) # ???
+        binaryReader.seek(4, 1) # zeros ?
+
+        self.get_offsets(binaryReader, 5)
 
         # offset 1 to 5 : lods information offset
         # offset 9 : transformation information offset
 
-        self.read_lods()
+        self.read_lods(binaryReader)
 
-        self.read_shadow()
+        self.read_shadow(binaryReader)
 
-    def get_offsets(self, count):
+        self.read_transformations(binaryReader)
+
+    def get_offsets(self, binaryReader, count):
         for i in range(count):
-            self.offsetList.append(self.br.readUInt())
+            self.offsetList.append(binaryReader.readUInt())
 
-    def read_transformations(self):
-        self.seek(self.offsetList[9], 0)
-        transformation_count = self.br.readUInt()
-        for i in range(transformation_count):
-            self.br.readBytes(72)
+    def read_transformations(self, binaryReader):
+        if self.offsetList[9] != 0:
+            binaryReader.seek(self.offsetList[9], 0)
+            transformation_count = binaryReader.readUInt()
+            for i in range(transformation_count):
+                mesh_index = binaryReader.readUShort()
+                transformation = R6C.TRANSFORMATION()
+                transformation.read_transformation(binaryReader)
+                self.transformations[mesh_index] = transformation
 
-    def read_lods(self):
+    def read_lods(self, binaryReader):
         lod_number = 0
         for i in range(1,5):
             indexes = []
             if self.offsetList[i] != 0:
-                self.br.seek(self.offsetList[i], 0)
-                count1 = self.br.readUShort() # submesh count
-                count2 = self.br.readUShort() # submesh count
-                r6o_offset = self.br.readUInt()
+                binaryReader.seek(self.offsetList[i], 0)
+                count1 = binaryReader.readUShort() # submesh count
+                count2 = binaryReader.readUShort() # submesh count
+                r6o_offset = binaryReader.readUInt()
 
                 for j in range(count1):
-                    indexes.append((self.br.readUShort(), self.br.readUShort(), self.br.readUShort(), self.br.readUShort()))
+                    indexes.append((binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort()))
 
                 for j in range(count2):
-                    indexes.append((self.br.readUShort(), self.br.readUShort(), self.br.readUShort(), self.br.readUShort()))
+                    indexes.append((binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort()))
      
-                self.br.seek(r6o_offset, 0)
+                binaryReader.seek(r6o_offset, 0)
                 
-                r6o = R6O(self.br)
+                r6o = R6O(indexes)
+                r6o.read(binaryReader, indexes)
                 self.structures["LOD" + str(lod_number)] = (r6o, indexes)
                 
                 lod_number += 1
         
-    def read_shadow(self):
+    def read_shadow(self, binaryReader):
         indexes = []
-        self.br.seek(self.offsetList[5], 0)
-        count1 = self.br.readUShort() # submesh count
-        count2 = self.br.readUShort() # submesh count
-        r6o_offset = self.br.readUInt()
+        binaryReader.seek(self.offsetList[5], 0)
+        count1 = binaryReader.readUShort() # submesh count
+        count2 = binaryReader.readUShort() # submesh count
+        r6o_offset = binaryReader.readUInt()
 
         for j in range(count1):
-            indexes.append((self.br.readUShort(), self.br.readUShort(), self.br.readUShort(), self.br.readUShort()))
+            indexes.append((binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort()))
 
         for j in range(count2):
-            indexes.append((self.br.readUShort(), self.br.readUShort(), self.br.readUShort(), self.br.readUShort()))
+            indexes.append((binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort(), binaryReader.readUShort()))
 
-        self.br.seek(r6o_offset, 0)
+        binaryReader.seek(r6o_offset, 0)
         
-        r6o = R6O(self.br)
+        r6o = R6O(indexes)
+        r6o.read(binaryReader, indexes)
         self.structures["SHADOW"]  = (r6o, indexes)
 
-class R6C_TRANSFORMATION:
-    
-    def __init__(self, binaryReader):
-        self.mesh_index = 0
-        self.unknown = None
-        self.unknown2 = None
-        self.translation = None
-        self.unknown3 = None
-        self.unknown4 = None
-        self.scale = None
+    class TRANSFORMATION:
+        
+        def __init__(self):
+            self.unknown = None
+            self.unknown2 = None
+            self.translation = None
+            self.unknown3 = None
+            self.unknown4 = None
+            self.scale = None
 
-    def read_transformation(self, binaryReader):
+        def read_transformation(self, binaryReader):
 
-        self.mesh_index = binaryReader.readUShort()
-        binaryReader.seek(6, 1)
-        self.translation = Vector3.fromBytes(binaryReader.readBytes(12))
+            binaryReader.seek(6, 1)
+            translation = Vector3.fromBytes(binaryReader.readBytes(12), ">")
+            self.translation = Vector((translation[0], -translation[2], translation[1]))
+            binaryReader.seek(52, 1)
