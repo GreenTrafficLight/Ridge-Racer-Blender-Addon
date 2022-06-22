@@ -13,73 +13,89 @@ from .Formats import *
 
 # Ridge Racer 6
 
-def build_r6c_hierarchy(data):
-    for structure, r6o in data.structures.items():
+def build_r6c_hierarchy(r6c):
+    for structure, r6o in r6c.structures.items():
 
         if r6o != None:
             structure_empty = add_empty(structure, None)
 
-            build_r6c(r6o[0], structure_empty)
+            for i in range(len(r6o[1])):
+                
+                empty_parent = None
+                
+                empty_parent = add_empty(str(r6o[1][i][0]), structure_empty)
+                if r6o[1][i][0] in r6c.transformations:
+                    empty_parent.location = r6c.transformations[r6o[1][i][0]].translation
 
-def build_r6c(data, parent):
+                """
+                if r6o[1][i][0] == 0:
+                    body_empty = add_empty("0", structure_empty)
+                    empty_parent = body_empty
+                else:
+                    empty_parent = structure_empty
+                """
 
-    for submesh in range(len(data.vertex_buffers)):
+                build_r6o(r6o[0], i, empty_parent)
 
-        mesh = bpy.data.meshes.new(parent.name + "_" + str(submesh))
-        obj = bpy.data.objects.new(parent.name + "_" + str(submesh), mesh)
-        obj.rotation_euler = (radians(90), 0, 0)
+def build_r6o(data, index, parent):
+    
+    mesh = bpy.data.meshes.new(parent.name + "_" + str(index))
+    obj = bpy.data.objects.new(parent.name + "_" + str(index), mesh)
+    obj.rotation_euler = (radians(90), 0, 0)
 
-        if bpy.app.version >= (2, 80, 0):
-            parent.users_collection[0].objects.link(obj)
-        else:
-            parent.users_collection[0].objects.link(obj)
+    if bpy.app.version >= (2, 80, 0):
+        parent.users_collection[0].objects.link(obj)
+    else:
+        parent.users_collection[0].objects.link(obj)
 
-        obj.parent = parent
+    obj.parent = parent
 
-        vertexList = {}
-        facesList = []
-        normals = []
+    vertex_buffer = data.vertex_buffers[index]
+    face_buffer = data.face_buffers[index]
 
-        bm = bmesh.new()
-        bm.from_mesh(mesh)
+    vertexList = {}
+    facesList = []
+    normals = []
 
-        # Set vertices
-        for j in range(len(data.vertex_buffers[submesh]["positions"])):
-            vertex = bm.verts.new(data.vertex_buffers[submesh]["positions"][j])
-            
-            if data.vertex_buffers[submesh]["normals"] != []:
-                vertex.normal = data.vertex_buffers[submesh]["normals"][j]
-                normals.append(data.vertex_buffers[submesh]["normals"][j])
-            
-            vertex.index = j
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
 
-            vertexList[j] = vertex
+    # Set vertices
+    for j in range(len(vertex_buffer["positions"])):
+        vertex = bm.verts.new(vertex_buffer["positions"][j])
+        
+        if vertex_buffer["normals"] != []:
+            vertex.normal = vertex_buffer["normals"][j]
+            normals.append(vertex_buffer["normals"][j])
+        
+        vertex.index = j
 
-        faces = StripToTriangle(data.face_buffers[submesh], "cba")     
+        vertexList[j] = vertex
 
-        # Set faces
-        for j in range(0, len(faces)):
-            try:
-                face = bm.faces.new([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]])
-                face.smooth = True
-                facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
-            except:
-                pass
-                # print(shape.geomName)
+    faces = StripToTriangle(face_buffer, "cba")     
 
-        # Set uv
-        for f in bm.faces:
-            uv_layer1 = bm.loops.layers.uv.verify()
-            for l in f.loops:
-                l[uv_layer1].uv =  [data.vertex_buffers[submesh]["texCoords"][l.vert.index][0], 1 - data.vertex_buffers[submesh]["texCoords"][l.vert.index][1]]
+    # Set faces
+    for j in range(0, len(faces)):
+        try:
+            face = bm.faces.new([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]])
+            face.smooth = True
+            facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
+        except:
+            pass
+            # print(shape.geomName)
 
-        bm.to_mesh(mesh)
-        bm.free()
+    # Set uv
+    for f in bm.faces:
+        uv_layer1 = bm.loops.layers.uv.verify()
+        for l in f.loops:
+            l[uv_layer1].uv =  [vertex_buffer["texCoords"][l.vert.index][0], 1 - vertex_buffer["texCoords"][l.vert.index][1]]
 
-        mesh.use_auto_smooth = True
-        if normals != []:
-            mesh.normals_split_custom_set_from_vertices(normals)
+    bm.to_mesh(mesh)
+    bm.free()
 
+    mesh.use_auto_smooth = True
+    if normals != []:
+        mesh.normals_split_custom_set_from_vertices(normals)
 
 # Ridge Racer 7
 
@@ -239,7 +255,8 @@ def main(filepath, clear_scene):
         r7w = R7W(bs)
         build_r7w_hierarchy(r7w)
     elif header == "R6C":
-        r6c = R6C(bs)
+        r6c = R6C()
+        r6c.read(bs)
         build_r6c_hierarchy(r6c)
     
     return {'FINISHED'}

@@ -1,28 +1,14 @@
 from mathutils import *
 
-class Material_Information:
-    def __init__(self) -> None:
-        pass
-
-class Vertex_Buffer_Information :
-    def __init__(self):
-        self.vertex_buffer_offset = 0
-        self.vertex_attributes = 0
-        self.vertex_number = 0
-
-class Face_Buffer_Information :
-    def __init__(self):
-        self.face_buffer_offset = 0
-        self.face_number = 0
-
 class R6O:
 
-    def __init__(self, binaryReader):
-        self.br = binaryReader
-
+    def __init__(self, indexes):
         self.vertex_buffers = []
         self.face_buffers = []
-        
+        self.materials = []
+
+    def read(self, binaryReader, indexes):
+
         offsets = []
 
         R6O_pos = binaryReader.tell()
@@ -43,30 +29,30 @@ class R6O:
         binaryReader.seek(offsets[2], 0) # Position to vertex buffers
         self.read_vertex_buffers_informations(binaryReader)
         binaryReader.seek(offsets[3], 0) # Position to face buffers
-        self.read_face_buffers_informations(binaryReader)
+        self.read_face_buffers_informations(binaryReader)        
 
     def read_unknown(self, binaryReader):
         binaryReader.seek(4, 1)  # zeros ?
         matrixCount = binaryReader.readUInt() # matrix count ?
 
-    def read_material_informations(self):
+    def read_material_informations(self, binaryReader):
         material_information_offsets = []
 
-        material_information_position = self.br.tell()
+        material_information_position = binaryReader.tell()
 
-        self.br.seek(4, 1)  # zeros ?
-        count = self.br.readUInt() # material information count
+        binaryReader.seek(4, 1)  # zeros ?
+        count = binaryReader.readUInt() # material information count
 
         for i in range(count):
-            material_information_offsets.append(material_information_position + self.br.readUInt())
+            material_information_offsets.append(material_information_position + binaryReader.readUInt())
 
-        self.get_materials(material_information_offsets)
+        self.get_materials(binaryReader, material_information_offsets)
 
-    def get_materials(self, material_information_offsets):
+    def get_materials(self, binaryReader, material_information_offsets):
 
         for material_information_offset in material_information_offsets:
 
-            self.br.seek(material_information_offset)
+            binaryReader.seek(material_information_offset)
 
             material = {
             "texture_count" : 0,
@@ -83,7 +69,7 @@ class R6O:
         
         for buffer in range(buffer_count):
 
-            vertex_buffer_information = Vertex_Buffer_Information()
+            vertex_buffer_information = R6O.Vertex_Buffer_Information()
 
             vertex_buffer_information.vertex_buffer_offset = vertex_information_position + binaryReader.readUInt() # offset to buffer
             vertex_buffer_information.vertex_attributes = binaryReader.readUInt() # vertex attributes
@@ -91,9 +77,9 @@ class R6O:
 
             vertex_buffer_informations.append(vertex_buffer_information)
 
-        self.get_vertex_buffers(vertex_buffer_informations)
+        self.get_vertex_buffers(binaryReader, vertex_buffer_informations)
 
-    def get_vertex_buffers(self, vertex_buffer_informations):
+    def get_vertex_buffers(self, binaryReader, vertex_buffer_informations):
 
         for vertex_buffer_information in vertex_buffer_informations:
 
@@ -108,27 +94,27 @@ class R6O:
             # 0x00200001 = Stride 16
             # 0x00200009 = ???
             print("test : " + hex(vertex_buffer_information.vertex_attributes))
-            print(self.br.tell())
+            print(binaryReader.tell())
             print(vertex_buffer_information.vertex_number)
             
-            self.br.seek(vertex_buffer_information.vertex_buffer_offset)
+            binaryReader.seek(vertex_buffer_information.vertex_buffer_offset)
             for i in range(vertex_buffer_information.vertex_number):
 
                 # (0x00000001) 1 = Positions (Float)
                 if vertex_buffer_information.vertex_attributes & 0xF == 1:
-                    vertex_buffer["positions"].append([self.br.readFloat(), self.br.readFloat(), self.br.readFloat()])
+                    vertex_buffer["positions"].append([binaryReader.readFloat(), binaryReader.readFloat(), binaryReader.readFloat()])
 
                 # (0x00000200) 2 = Normals (Float)
                 if ((vertex_buffer_information.vertex_attributes >> 8) & 0xF) == 2:
-                    vertex_buffer["normals"].append(Vector((self.br.readFloat(), self.br.readFloat(), self.br.readFloat())).normalized())
+                    vertex_buffer["normals"].append(Vector((binaryReader.readFloat(), binaryReader.readFloat(), binaryReader.readFloat())).normalized())
 
                 # (0x00001000) 1 = ???
                 if ((vertex_buffer_information.vertex_attributes >> 12) & 0xF) == 1:
-                    self.br.seek(12, 1)
+                    binaryReader.seek(12, 1)
 
                 # (0x00200000) 2 = texCoords (Half-Float)
                 if ((vertex_buffer_information.vertex_attributes >> 20) & 0xF) == 2:
-                    vertex_buffer["texCoords"].append([self.br.readHalfFloat(), self.br.readHalfFloat()])
+                    vertex_buffer["texCoords"].append([binaryReader.readHalfFloat(), binaryReader.readHalfFloat()])
 
             self.vertex_buffers.append(vertex_buffer)
 
@@ -142,16 +128,16 @@ class R6O:
         
         for buffer in range(buffer_count):
             
-            face_buffer_information = Face_Buffer_Information()
+            face_buffer_information = R6O.Face_Buffer_Information()
 
             face_buffer_information.face_buffer_offset = face_information_position + binaryReader.readUInt() # offset to buffer
             face_buffer_information.face_number = binaryReader.readUInt()
 
             face_buffer_informations.append(face_buffer_information)
 
-        self.get_face_buffers(face_buffer_informations)
+        self.get_face_buffers(binaryReader, face_buffer_informations)
 
-    def get_face_buffers(self, face_buffer_informations):
+    def get_face_buffers(self, binaryReader, face_buffer_informations):
 
         for face_buffer_information in face_buffer_informations:
 
@@ -159,6 +145,21 @@ class R6O:
         
             for i in range(face_buffer_information.face_number):
                 
-                face_buffer.append(self.br.readUShort())
+                face_buffer.append(binaryReader.readUShort())
 
             self.face_buffers.append(face_buffer)
+
+    class Material_Information:
+        def __init__(self) -> None:
+            self.texture_hashs = []
+
+    class Vertex_Buffer_Information :
+        def __init__(self):
+            self.vertex_buffer_offset = 0
+            self.vertex_attributes = 0
+            self.vertex_number = 0
+
+    class Face_Buffer_Information :
+        def __init__(self):
+            self.face_buffer_offset = 0
+            self.face_number = 0
