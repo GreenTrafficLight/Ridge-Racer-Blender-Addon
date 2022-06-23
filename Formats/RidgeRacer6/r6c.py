@@ -76,7 +76,7 @@ class R6C:
                 r6o.read(binaryReader, indexes)
                 self.structures["LOD" + str(lod_number)] = (r6o, indexes)
                 
-                lod_number += 1
+            lod_number += 1
         
     def read_shadow(self, binaryReader):
         indexes = []
