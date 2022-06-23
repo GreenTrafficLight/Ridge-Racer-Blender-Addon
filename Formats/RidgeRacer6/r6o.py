@@ -1,5 +1,9 @@
 from mathutils import *
 
+from ...Utilities import *
+
+import binascii
+
 class R6O:
 
     def __init__(self, indexes):
@@ -25,6 +29,7 @@ class R6O:
         binaryReader.seek(offsets[0], 0) # Position to matrices ?
         self.read_unknown(binaryReader)
         binaryReader.seek(offsets[1], 0) # Position to material informations
+        self.read_material_informations(binaryReader)
         
         binaryReader.seek(offsets[2], 0) # Position to vertex buffers
         self.read_vertex_buffers_informations(binaryReader)
@@ -54,10 +59,11 @@ class R6O:
 
             binaryReader.seek(material_information_offset)
 
-            material = {
-            "texture_count" : 0,
-            "texture_hashs" : 0
-            }
+            material_information = R6O.Material_Information()
+            material_information.read(binaryReader)
+
+            self.materials.append(material_information)
+
 
     def read_vertex_buffers_informations(self, binaryReader):
         vertex_buffer_informations = []
@@ -151,7 +157,46 @@ class R6O:
 
     class Material_Information:
         def __init__(self) -> None:
-            self.texture_hashs = []
+            self.name = 0
+            
+            self.textures = []
+
+        def read(self, binaryReader):
+
+            binaryReader.seek(4, 1) # zeros ?
+            self.name = str(binascii.hexlify(binaryReader.readBytes(4)), 'ascii') # ?
+            binaryReader.readUInt()
+            float_count = binaryReader.readUInt()
+            unknonwn_count = binaryReader.readUInt()
+            texture_count = binaryReader.readUInt()
+            
+            for i in range(texture_count):
+                binaryReader.readUInt() # texture index ?
+
+            for i in range(float_count):
+                binaryReader.readFloat()
+
+            for i in range(unknonwn_count):
+                binaryReader.readUInt()
+                binaryReader.readUInt()
+
+            self.read_texture_informations(binaryReader, texture_count)
+
+        def read_texture_informations(self, binaryReader, texture_count):
+
+            for i in range(texture_count):
+
+                texture_information = R6O.Material_Information.Texture_Information()
+                texture_information.read(binaryReader)
+                self.textures.append(texture_information)
+
+        class Texture_Information:
+            def __init__(self) -> None:
+                self.texture_hash = None
+
+            def read(self, binaryReader):
+                self.texture_hash = str(binascii.hexlify(binaryReader.readBytes(4)), 'ascii')
+                binaryReader.seek(16, 1) # ? 
 
     class Vertex_Buffer_Information :
         def __init__(self):
