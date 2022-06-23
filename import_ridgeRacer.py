@@ -110,9 +110,9 @@ def build_r7c_hierarchy(data):
             side_empty = add_empty("Side", lod_empty)
             wing_empty = add_empty("Wing", lod_empty)
 
-            for part, mesh in hierarchy.hierarchy_dictionary.items():
+            for part, meshes in hierarchy.hierarchy_dictionary.items():
 
-                if mesh :
+                if meshes :
                     part_node = add_empty(part, None)
                     if "Hood" in part:
                         part_node.parent = hood_empty
@@ -127,10 +127,18 @@ def build_r7c_hierarchy(data):
                     else:
                         part_node.parent = lod_empty
 
-                    count = 0
-                    for submesh in mesh:
-                        build_r7_model(lod, submesh, part_node, count)
-                        count += 1
+                    index = 0
+                    for mesh in meshes:
+                        
+                        empty_parent = None
+                        
+                        empty_parent = add_empty(str(mesh[1][0]), part_node)
+                        if mesh[1][0] in data.transformations:
+                            empty_parent.location = data.transformations[mesh[1][0]].translation
+
+                        build_r7o(lod, mesh[0], empty_parent, index)
+                        index += 1
+                    
 
 def build_r7w_hierarchy(data):
 
@@ -141,7 +149,7 @@ def build_r7w_hierarchy(data):
 
             count = 0
             for submesh in part.submeshes:
-                build_r7_model(None, submesh, lod_empty, count)
+                build_r7o(None, submesh, lod_empty, count)
                 count += 1
 
 def build_arcl_hierarchy(data):
@@ -151,9 +159,9 @@ def build_arcl_hierarchy(data):
         r7m_name = data.paths[i].split("\\")[-1]
         empty = add_empty(r7m_name[:-4], None)
 
-        build_r7_model(None, data.R7M_list[i].r7o, empty, None)
+        build_r7o(None, data.R7M_list[i].r7o, empty, None)
 
-def build_r7_model(lod, submesh, part_empty, count):
+def build_r7o(lod, submesh, part_empty, count):
 
     for buffer in range(len(submesh.vertex_buffers)):
 
@@ -241,6 +249,8 @@ def main(filepath, clear_scene):
         else:
             R6M_datas = []
 
+            bs.seek(0, 0)
+
             R6M_count = bs.readUInt()
             R6M_list_offset = bs.readUInt()
             
@@ -249,7 +259,8 @@ def main(filepath, clear_scene):
                 R6M_datas.append((bs.readUInt(), bs.readUInt()))
 
     elif header == "R7C":
-        r7c = R7C(bs)
+        r7c = R7C()
+        r7c.read(bs)
         build_r7c_hierarchy(r7c)
     elif header == "R7W":
         r7w = R7W(bs)

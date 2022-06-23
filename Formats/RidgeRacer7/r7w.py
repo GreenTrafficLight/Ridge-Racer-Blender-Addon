@@ -66,5 +66,6 @@ class R7W:
         def read_r7o(self, submesh_offsets):
             for offset in submesh_offsets:
                 self.br.seek(offset, 0)
-                r7o = R7O(self.br)
+                r7o = R7O()
+                r7o.read(self.br)
                 self.submeshes.append(r7o)

@@ -1,20 +1,23 @@
 from .r6o import *
 
 class R6M:
-    def __init__(self, binaryReader):
-        self.br = binaryReader
+    def __init__(self):
         self.r6o = None
 
-    def read(self):
+    def read(self, binaryReader):
 
-        R6M_pos = self.br.tell()
-        header = self.br.bytesToString(self.br.readBytes(4)).replace("\0", "")
+        offsets = []
 
-        self.br.seek(4, 1) # zeros ?
-        self.br.seek(4, 1) # offset to ?
-        self.br.seek(4, 1) # offset to ?
-        R6O_offset = R6M_pos + self.br.readUInt()
+        R6M_pos = binaryReader.tell()
+        header = binaryReader.bytesToString(binaryReader.readBytes(4)).replace("\0", "")
+        binaryReader.seek(4, 1) # zeros ?
 
-        self.br.seek(R6O_offset, 0)
+        for i in range(3):
+            # offset 1 = submesh groups
+            # offset 2 = ?
+            # offest 3 = r6o
+            offsets.append(R6M_pos + binaryReader.readUInt())
+
+        binaryReader.seek(offsets[2], 0)
         
-        self.r6o = R6O(self.br)
+        self.r6o = R6O()

@@ -37,5 +37,6 @@ class R7M:
             self.submesh_groups.append((submesh_count, submesh_total_count))
 
     def read_r7o(self):        
-        self.r7o = R7O(self.br)
+        self.r7o = R7O()
+        self.r7o.read(self.br)
         #print(self.br.tell())
