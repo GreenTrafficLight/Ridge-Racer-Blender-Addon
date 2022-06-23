@@ -100,16 +100,19 @@ class R6C:
     class TRANSFORMATION:
         
         def __init__(self):
-            self.unknown = None
+            self.parent_mesh_index = 0
             self.unknown2 = None
             self.translation = None
-            self.unknown3 = None
+            self.rotation = None
             self.unknown4 = None
             self.scale = None
 
         def read_transformation(self, binaryReader):
 
-            binaryReader.seek(6, 1)
+            self.parent_mesh_index = binaryReader.readUShort()
+            binaryReader.seek(4, 1)
             translation = Vector3.fromBytes(binaryReader.readBytes(12), ">")
             self.translation = Vector((translation[0], -translation[2], translation[1]))
-            binaryReader.seek(52, 1)
+            rotation = Vector3.fromBytes(binaryReader.readBytes(12), ">")
+            self.rotation = Vector((rotation[0], -rotation[2], rotation[1]))
+            binaryReader.seek(40, 1)

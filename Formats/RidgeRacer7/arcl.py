@@ -11,35 +11,43 @@ class ARCL:
         self.paths = []
         self.R7M_list = []
 
-        self.R7M_count = self.br.readUInt()
-        R7M_offsetList = self.br.readUInt()
-        path_offsetList = self.br.readUInt()
+    def read(self, binaryReader):
 
-        self.br.seek(R7M_offsetList, 0)
-        for offset in range(self.R7M_count):
-            self.R7M_offsets.append(self.br.readUInt())
+        R7M_count = binaryReader.readUInt()
+        R7M_offsetList = binaryReader.readUInt()
+        path_offsetList = binaryReader.readUInt()
 
-        self.br.seek(path_offsetList, 0)
-        for path in range(self.R7M_count):
-            self.path_offsets.append(self.br.readUInt())
+        binaryReader.seek(R7M_offsetList, 0)
+        for offset in range(R7M_count):
+            self.R7M_offsets.append(binaryReader.readUInt())
 
-    def read_paths(self):
+        binaryReader.seek(path_offsetList, 0)
+        for path in range(R7M_count):
+            self.path_offsets.append(binaryReader.readUInt())
+
+        self.read_paths(binaryReader)
+
+        self.read_R7M(binaryReader)
+
+    def read_paths(self, binaryReader):
+        
         for offset in self.path_offsets:
-            self.br.seek(offset, 0)
-            self.paths.append(self.br.readString())
+            binaryReader.seek(offset, 0)
+            self.paths.append(binaryReader.readString())
 
-
-    def read_R7M(self):
+    def read_R7M(self, binaryReader):
+        
         count = 0
         for offset in self.R7M_offsets:
-            self.br.seek(offset, 0)
+            binaryReader.seek(offset, 0)
             
-            R7M_size = self.br.readUInt()
-            R7M_offset = self.br.readUInt()
+            R7M_size = binaryReader.readUInt()
+            R7M_offset = binaryReader.readUInt()
 
-            self.br.seek(R7M_offset, 0)
+            binaryReader.seek(R7M_offset, 0)
 
-            r7m = R7M(self.br)
+            r7m = R7M()
+            r7m.read(binaryReader)
             self.R7M_list.append(r7m)
 
             count += 1
