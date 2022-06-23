@@ -14,7 +14,7 @@ def clearScene():
     for image in bpy.data.images:
         bpy.data.images.remove(image)
 
-def add_empty(name, parent):
+def add_empty(name, parent, empty_location=(0.0, 0.0, 0.0), empty_rotation=(0.0, 0.0, 0.0), empty_scale=(0.0, 0.0, 0.0)):
 
     empty = bpy.context.scene.objects.get(name)
     if empty != None and empty.parent != parent:
@@ -22,7 +22,7 @@ def add_empty(name, parent):
 
     if empty == None:
         
-        bpy.ops.object.empty_add(type='PLAIN_AXES')
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location = empty_location, rotation = empty_rotation, scale = empty_scale)
         empty = bpy.context.active_object
         empty.empty_display_size = 0.1
         empty.name = name
