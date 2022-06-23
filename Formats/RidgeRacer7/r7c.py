@@ -85,10 +85,10 @@ class R7C:
             binaryReader.seek(self.offsets[8], 0)
             transformation_count = binaryReader.readUInt()
             for i in range(transformation_count):
-
+                mesh_index = binaryReader.readUShort()
                 transformation = R7C.TRANSFORMATION()
                 transformation.read_transformation(binaryReader)
-                self.transformations[transformation.mesh_index] = transformation
+                self.transformations[mesh_index] = transformation
 
     class LOD(object):
         
@@ -125,25 +125,25 @@ class R7C:
         def __init__(self):
             super().__init__()
 
-            self.indexes1 = []
-            self.indexes2 = []
-
-            self.submesh_offsets1 = []
-            self.submesh_offsets2 = []
-
         def read(self, binaryReader, part_offset, part_index, hierarchy_dictionary):
             
+            indexes1 = []
+            indexes2 = []
+
+            submesh_offsets1 = []
+            submesh_offsets2 = []
+
             binaryReader.seek(part_offset, 0)
             binaryReader.seek(4, 1)
             count1 = binaryReader.readUShort() # count of submesh ?
             count2 = binaryReader.readUShort() # count of submesh ?
             binaryReader.seek(32, 1)  # zeros ?
 
-            self.get_submesh_offsets(binaryReader, self.submesh_offsets1, self.indexes1, count1, part_offset)
-            self.get_submesh_offsets(binaryReader, self.submesh_offsets2, self.indexes2, count2, part_offset)
+            self.get_submesh_offsets(binaryReader, submesh_offsets1, indexes1, count1, part_offset)
+            self.get_submesh_offsets(binaryReader, submesh_offsets2, indexes2, count2, part_offset)
 
-            self.read_r7o(binaryReader, self.submesh_offsets1, self.indexes1, part_index, hierarchy_dictionary)
-            self.read_r7o(binaryReader, self.submesh_offsets2, self.indexes2, part_index, hierarchy_dictionary)
+            self.read_r7o(binaryReader, submesh_offsets1, indexes1, part_index, hierarchy_dictionary)
+            self.read_r7o(binaryReader, submesh_offsets2, indexes2, part_index, hierarchy_dictionary)
 
         def get_submesh_offsets(self, binaryReader, list, indexes, count, part_offset):
             
@@ -164,20 +164,19 @@ class R7C:
     class TRANSFORMATION:
         
         def __init__(self):
-            self.mesh_index = 0
             self.parent_mesh_index = 0
-            self.unknown = None
             self.unknown2 = None
             self.translation = None
-            self.unknown3 = None
+            self.rotation = None
             self.unknown4 = None
             self.scale = None
 
         def read_transformation(self, binaryReader):
 
-            self.mesh_index = binaryReader.readUShort()
             self.parent_mesh_index = binaryReader.readUShort()
             binaryReader.seek(4, 1)
             translation = Vector3.fromBytes(binaryReader.readBytes(12), ">")
             self.translation = Vector((translation[0], -translation[2], translation[1]))
-            binaryReader.seek(52, 1)
+            rotation = Vector3.fromBytes(binaryReader.readBytes(12), ">")
+            self.rotation = Vector((rotation[0], -rotation[2], rotation[1]))
+            binaryReader.seek(40, 1)
