@@ -23,9 +23,10 @@ def build_r6c_hierarchy(r6c):
                 
                 empty_parent = None
                 
-                empty_parent = add_empty(str(r6o[1][i][0]), structure_empty)
                 if r6o[1][i][0] in r6c.transformations:
-                    empty_parent.location = r6c.transformations[r6o[1][i][0]].translation
+                    empty_parent = add_empty(str(r6o[1][i][0]), structure_empty, r6c.transformations[r6o[1][i][0]].translation, r6c.transformations[r6o[1][i][0]].rotation)
+                else:
+                    empty_parent = add_empty(str(r6o[1][i][0]), structure_empty)
 
                 """
                 if r6o[1][i][0] == 0:
@@ -52,6 +53,7 @@ def build_r6o(data, index, parent):
 
     vertex_buffer = data.vertex_buffers[index]
     face_buffer = data.face_buffers[index]
+    r6o_material = data.materials[index]
 
     vertexList = {}
     facesList = []
@@ -97,6 +99,15 @@ def build_r6o(data, index, parent):
     if normals != []:
         mesh.normals_split_custom_set_from_vertices(normals)
 
+    """
+    material = bpy.data.materials.get(r6o_material.name)
+    if not material:
+        material = bpy.data.materials.new(r6o_material.name)
+
+    mesh.materials.append(material)
+    """
+
+
 # Ridge Racer 7
 
 def build_r7c_hierarchy(data):
@@ -130,16 +141,17 @@ def build_r7c_hierarchy(data):
                     index = 0
                     for mesh in meshes:
                         
-                        empty_parent = None
+                        #empty_parent = part_node
                         
-                        empty_parent = add_empty(str(mesh[1][0]), part_node)
                         if mesh[1][0] in data.transformations:
-                            empty_parent.location = data.transformations[mesh[1][0]].translation
+                            #empty_parent.location = data.transformations[mesh[1][0]].translation
+                            empty_parent = add_empty(str(mesh[1][0]), part_node, data.transformations[mesh[1][0]].translation, data.transformations[mesh[1][0]].rotation)
+                        else:
+                            empty_parent = add_empty(str(mesh[1][0]), part_node)
 
                         build_r7o(lod, mesh[0], empty_parent, index)
                         index += 1
                     
-
 def build_r7w_hierarchy(data):
 
     for lod, part in data.lods.items():
@@ -165,7 +177,12 @@ def build_r7o(lod, submesh, part_empty, count):
 
     for buffer in range(len(submesh.vertex_buffers)):
 
-        mesh_name = part_empty.name + "_" + str(buffer)
+        if part_empty.parent != None:
+            mesh_name = part_empty.parent.name + "_" + str(buffer)
+        else:
+            mesh_name = part_empty.name + "_" + str(buffer)
+        
+        
         if lod != None:
             mesh_name = lod + "_" + mesh_name
         if count != None:
@@ -241,10 +258,10 @@ def main(filepath, clear_scene):
     header = bs.bytesToString(bs.readBytes(4)).replace("\0", "")
     
     if filename == "Model":
+        
         if header == "ArcL":
             arcl = ARCL(bs)
-            arcl.read_paths()
-            arcl.read_R7M()
+            arcl.read(bs)
             build_arcl_hierarchy(arcl)
         else:
             R6M_datas = []
@@ -263,7 +280,8 @@ def main(filepath, clear_scene):
         r7c.read(bs)
         build_r7c_hierarchy(r7c)
     elif header == "R7W":
-        r7w = R7W(bs)
+        r7w = R7W()
+        r7w.read(bs)
         build_r7w_hierarchy(r7w)
     elif header == "R6C":
         r6c = R6C()
