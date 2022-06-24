@@ -47,22 +47,26 @@ class MyProperties(PropertyGroup):
         name="",
         description="Path to Directory",
         default="",
-        maxlen=1024,
-        subtype='DIR_PATH')
+        subtype='FILE_PATH')
 
 class OBJECT_PT_CustomPanel(Panel):
     bl_idname = "OBJECT_PT_my_panel"
-    bl_label = "My Panel"
+    bl_label = "Ridge Racer Importer"
     bl_space_type = "VIEW_3D"   
     bl_region_type = "UI"
-    bl_category = "New Tab"
+    bl_category = "Ridge Racer Importer"
 
 
     def draw(self, context):
         layout = self.layout
         scn = context.scene
+        my_tool = scn.my_tool
+        
         col = layout.column(align=True)
-        col.prop(scn.my_tool, "path", text="")
+        col.label(text = "Test")
+        col.prop(my_tool, "path", text="")
+        
+        
 
 
 classes = (MyProperties, ImportRidgeRacer, OBJECT_PT_CustomPanel)
