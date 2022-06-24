@@ -252,6 +252,8 @@ def main(filepath, clear_scene):
     if clear_scene:
         clearScene()
 
+    test = bpy.context.scene.my_tool.path
+
     file = open(filepath, 'rb')
     filename =  filepath.split("\\")[-1]
     bs = BinaryReader(file, ">")
