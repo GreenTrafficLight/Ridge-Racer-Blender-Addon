@@ -17,7 +17,8 @@ def build_r6c_hierarchy(r6c):
     for structure, r6o in r6c.structures.items():
 
         if r6o != None:
-            structure_empty = add_empty(structure, None)
+            
+            structure_empty = add_empty(structure, empty_rotation=(radians(90), 0, 0))
 
             for i in range(len(r6o[1])):
                 
@@ -42,7 +43,6 @@ def build_r6o(data, index, parent):
     
     mesh = bpy.data.meshes.new(parent.name + "_" + str(index))
     obj = bpy.data.objects.new(parent.name + "_" + str(index), mesh)
-    obj.rotation_euler = (radians(90), 0, 0)
 
     if bpy.app.version >= (2, 80, 0):
         parent.users_collection[0].objects.link(obj)
@@ -114,7 +114,8 @@ def build_r7c_hierarchy(data):
     for lod, hierarchy in data.lods.items():
         
         if hierarchy :
-            lod_empty = add_empty(lod, None)
+            
+            lod_empty = add_empty(lod, empty_rotation=(radians(90), 0, 0))
             hood_empty = add_empty("Hood", lod_empty)
             front_empty = add_empty("Front", lod_empty)
             rear_empty = add_empty("Rear", lod_empty)
@@ -191,7 +192,7 @@ def build_r7o(lod, submesh, part_empty, count):
         mesh = bpy.data.meshes.new(mesh_name)
         obj = bpy.data.objects.new(mesh_name, mesh)
         
-        obj.rotation_euler = (radians(90), 0, 0)
+        #obj.rotation_euler = (radians(90), 0, 0)
 
         if bpy.app.version >= (2, 80, 0):
             part_empty.users_collection[0].objects.link(obj)

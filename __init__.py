@@ -2,7 +2,7 @@ bl_info = {
 	"name": "Ridge Racer Modern Era Models format",
 	"description": "Import Ridge Racer Modern Era Model",
 	"author": "GreenTrafficLight",
-	"version": (1, 0),
+	"version": (1, 1),
 	"blender": (2, 80, 0),
 	"location": "File > Import > Ridge Racer Modern Era Importer",
 	"warning": "",
