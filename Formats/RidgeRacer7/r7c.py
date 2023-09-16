@@ -60,35 +60,31 @@ class R7C:
         # offset 8 : transformations offsets
         self.get_offsets(binaryReader)
         
-        self.read_lods(binaryReader)
-
-        self.read_transformations(binaryReader)
-
-    def get_offsets(self, binaryReader):        
-        for offset in range(16):
-            self.offsets.append(binaryReader.readUInt())
-
-    def read_lods(self, binaryReader):
-        # Read LOD meshes
-        lod_number = 0
         for i in range(1, 5):
             if self.offsets[i] != 0:
-                R7C_lod = R7C.LOD()
-                R7C_lod.read(binaryReader, self.offsets[i])
-                self.lods["LOD" + str(lod_number)] = R7C_lod
-            
-            lod_number += 1
-
-    def read_transformations(self, binaryReader):
+                self.read_lod(binaryReader)
 
         if self.offsets[8] != 0:
-            binaryReader.seek(self.offsets[8], 0)
-            transformation_count = binaryReader.readUInt()
-            for i in range(transformation_count):
-                mesh_index = binaryReader.readUShort()
-                transformation = R7C.TRANSFORMATION()
-                transformation.read_transformation(binaryReader)
-                self.transformations[mesh_index] = transformation
+            self.read_transformations(binaryReader)
+
+    def get_offsets(self, binaryReader):        
+        for i in range(16):
+            self.offsets.append(binaryReader.readUInt())
+
+    def read_lod(self, binaryReader, lod_number):
+        # Read LOD meshes
+        R7C_lod = R7C.LOD()
+        R7C_lod.read(binaryReader, self.offsets[lod_number])
+        self.lods["LOD" + str(lod_number - 1)] = R7C_lod
+
+    def read_transformations(self, binaryReader):
+        binaryReader.seek(self.offsets[8], 0)
+        transformation_count = binaryReader.readUInt()
+        for i in range(transformation_count):
+            mesh_index = binaryReader.readUShort()
+            transformation = R7C.TRANSFORMATION()
+            transformation.read_transformation(binaryReader)
+            self.transformations[mesh_index] = transformation
 
     class LOD(object):
         
@@ -106,12 +102,12 @@ class R7C:
 
         def get_part_mesh_offsets(self, binaryReader, lod_offset):
 
-            for offset in range(26): # get offset of each body parts
-                part_offset = binaryReader.readUInt()
-                if part_offset == 0:
+            for i in range(26): # get offset of each body parts
+                offset = binaryReader.readUInt()
+                if offset == 0:
                     self.part_offsets.append(0)
                 else:
-                    self.part_offsets.append(lod_offset + part_offset)
+                    self.part_offsets.append(lod_offset + offset)
 
         def read_parts(self, binaryReader):
             part_index = 0
