@@ -51,6 +51,7 @@ class ARCL:
             self.R7M_list.append(r7m)
 
             count += 1
+            print(count)
 
             #if count == 5:
                 #break

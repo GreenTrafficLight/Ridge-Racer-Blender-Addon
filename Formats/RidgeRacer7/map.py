@@ -1,31 +1,30 @@
+from ...Utilities.binaryReader import *
+
 class MAP:
 
-    def __init__(self, br):
-        self.br = br
+    def __init__(self):
+        pass
 
+    def read_map_informations(self, br: BinaryReader):
         offsets = []
         for i in range(2):
             # offset 1 = map informations
             # offset 2 = ?
-            offsets.append(self.br.readUInt())
+            offsets.append(br.readUInt())
 
-        file_size = self.br.readUInt()
+        file_size = br.readUInt()
 
-        self.br.seek(offsets[0], 0)
-        self.read_map_informations()
-
-
-    def read_map_informations(self):
+        br.seek(offsets[0], 0)
         
         map_information_offsets = []
 
-        map_information_count = self.br.readUInt()
-        map_information_list_offset = self.br.readUInt()
+        map_information_count = br.readUInt()
+        map_information_list_offset = br.readUInt()
 
-        self.br.seek(map_information_list_offset, 0)
+        br.seek(map_information_list_offset, 0)
 
         for i in range(map_information_count):
-            map_information_offsets.append(self.br.readUInt())
+            map_information_offsets.append(br.readUInt())
 
 class MAP_INFORMATION:
 

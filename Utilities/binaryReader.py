@@ -56,26 +56,57 @@ class BinaryReader:
             ret.append(struct.unpack(self.endian + "B", self.read(1))[0])
         return bytes(ret)
 
-    def readFloat(self):
-        return struct.unpack(self.endian + "f", self.read(4))[0]
-
     def readHalfFloat(self):
         return float(np.frombuffer(self.read(2), dtype=">e")[0])
+
+    def readFloat(self):
+        return struct.unpack(self.endian + "f", self.read(4))[0]
 
     def readDouble(self):
         return struct.unpack(self.endian + "d", self.read(8))[0]
 
     def readString(self, encoding="utf-8"):
-        bytes = []
+        bytes = b''
 
         while True:
             character = self.read(1)
-            if character == b"\x00":
+            if character == b'\x00':
                 break
             else:
-                bytes.append(character)
+                bytes += character
 
-        return b''.join(bytes).decode(encoding)
+        return bytes.decode(encoding)
+
+    def readVector3(self):
+        x, y, z = struct.unpack(self.endian + "fff", self.read(12))[0]
+        return x, y, z
+    
+    def readVector4(self):
+        x, y, z, w = struct.unpack(self.endian + "ffff", self.read(16))[0]
+        return x, y, z, w
+
+    def readMatrix4x4(self):
+        matrix = []
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        return matrix
+    
+    def readMatrix4x3(self):
+        matrix = []
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        matrix.append(struct.unpack(self.endian + "ffff", self.read(16))[0])
+        return matrix
+
+    def readMatrix3x3(self):
+        matrix = []
+        matrix.append(struct.unpack(self.endian + "fff", self.read(12))[0])
+        matrix.append(struct.unpack(self.endian + "fff", self.read(12))[0])
+        matrix.append(struct.unpack(self.endian + "fff", self.read(12))[0])
+        return matrix
 
     def bytesToString(self, byteArray, encoding="utf-8"):
         try:
