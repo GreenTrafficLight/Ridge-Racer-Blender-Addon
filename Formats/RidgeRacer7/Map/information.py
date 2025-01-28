@@ -1,11 +1,11 @@
 from ....Utilities.binaryReader import *
 
-class MAP_INFORMATION_CONTAINER:
+class OBJECT_INFORMATION_CONTAINER:
     def __init__(self):
         self.offset = 0
         self.count = 0
 
-class MAP_INFORMATION:
+class OBJECT_INFORMATION:
 
     def __init__(self):
         self.name = ""
@@ -22,7 +22,7 @@ class MAP_INFORMATION:
             # map_information_data 3 = ?
             # map_information_data 4 = ?
             
-            map_information_container = MAP_INFORMATION_CONTAINER()
+            map_information_container = OBJECT_INFORMATION_CONTAINER()
             map_information_container.offset = br.readUInt()
             map_information_container.count = br.readUInt()
 
