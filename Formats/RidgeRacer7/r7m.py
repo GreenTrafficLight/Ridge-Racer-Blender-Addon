@@ -2,14 +2,14 @@ from .r7o import *
 
 from ...Utilities.binaryReader import BinaryReader
 
-class SubmeshGroup:
+class MeshGroup:
     def __init__(self) -> None:
-        self.count: int = 0
-        self.totalCount: int = 0
+        self.subMeshCount: int = 0
+        self.startIndex: int = 0
 
 class R7M:
     def __init__(self):
-        self.submeshGroups = []
+        self.MeshGroups = []
         self.r7o = None
 
     def read(self, br: BinaryReader):
@@ -37,10 +37,10 @@ class R7M:
         count = br.readUInt() # submesh group count
 
         for i in range(count):
-            submeshGroup = SubmeshGroup()
-            submeshGroup.count = br.readUInt()
-            submeshGroup.totalCount = br.readUInt()
-            self.submeshGroups.append(submeshGroup)
+            meshGroup = MeshGroup()
+            meshGroup.subMeshCount = br.readUInt()
+            meshGroup.startIndex = br.readUInt()
+            self.MeshGroups.append(meshGroup)
 
     def read_r7o(self, binaryReader):        
         self.r7o = R7O()
