@@ -76,7 +76,7 @@ def build_arcl_hierarchy(data: ARCL):
 
 def build_r7o(lod: str, submesh: R7O, part_empty, count: int):
 
-    for buffer in range(len(submesh.vertex_buffers)):
+    for buffer in range(len(submesh.vertexBuffers)):
 
         if part_empty.parent != None:
             mesh_name = part_empty.parent.name + "_" + str(buffer)
@@ -109,18 +109,18 @@ def build_r7o(lod: str, submesh: R7O, part_empty, count: int):
         bm.from_mesh(mesh)
 
         # Set vertices
-        for j in range(len(submesh.vertex_buffers[buffer]["positions"])):
-            vertex = bm.verts.new(submesh.vertex_buffers[buffer]["positions"][j])
+        for j in range(len(submesh.vertexBuffers[buffer]["positions"])):
+            vertex = bm.verts.new(submesh.vertexBuffers[buffer]["positions"][j])
             
-            if submesh.vertex_buffers[buffer]["normals"] != []:
-                vertex.normal = submesh.vertex_buffers[buffer]["normals"][j]
-                normals.append(submesh.vertex_buffers[buffer]["normals"][j])
+            if submesh.vertexBuffers[buffer]["normals"] != []:
+                vertex.normal = submesh.vertexBuffers[buffer]["normals"][j]
+                normals.append(submesh.vertexBuffers[buffer]["normals"][j])
             
             vertex.index = j
 
             vertexList[j] = vertex
 
-        faces = StripToTriangle(submesh.face_buffers[buffer], "cba")     
+        faces = StripToTriangle(submesh.faceBuffers[buffer], "cba")     
 
         # Set faces
         for j in range(0, len(faces)):
@@ -133,11 +133,11 @@ def build_r7o(lod: str, submesh: R7O, part_empty, count: int):
                 # print(shape.geomName)
 
         # Set uv
-        if submesh.vertex_buffers[buffer]["texCoords"] != []:
+        if submesh.vertexBuffers[buffer]["texCoords"] != []:
             for f in bm.faces:
                 uv_layer1 = bm.loops.layers.uv.verify()
                 for l in f.loops:
-                    l[uv_layer1].uv =  [submesh.vertex_buffers[buffer]["texCoords"][l.vert.index][0], 1 - submesh.vertex_buffers[buffer]["texCoords"][l.vert.index][1]]
+                    l[uv_layer1].uv =  [submesh.vertexBuffers[buffer]["texCoords"][l.vert.index][0], 1 - submesh.vertexBuffers[buffer]["texCoords"][l.vert.index][1]]
 
         bm.to_mesh(mesh)
         bm.free()

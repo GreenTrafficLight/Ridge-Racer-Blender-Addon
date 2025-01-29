@@ -1,165 +1,153 @@
 from mathutils import *
 
-class Vertex_Buffer_Information :
-    def __init__(self):
-        self.vertex_buffer_offset = 0
-        self.vertex_attributes = 0
-        self.vertex_number = 0
+from ...Utilities.binaryReader import BinaryReader
 
-class Face_Buffer_Information :
-    def __init__(self):
-        self.face_buffer_offset = 0
-        self.face_number = 0
+from typing import List
+
+class VertexBufferInformation :
+    def __init__(self) -> None:
+        self.vertexBufferOffset: int = 0
+        self.vertexAttributes: int = 0
+        self.vertexCount: int = 0
+
+class FaceBufferInformation :
+    def __init__(self) -> None:
+        self.faceBufferOffset: int = 0
+        self.faceCount: int = 0
 
 class R7O:
 
     def __init__(self):
-
-        self.vertex_buffers = []
-        self.face_buffers = []
+        self.vertexBuffers = []
+        self.faceBuffers = []
         
-    def read(self, binaryReader):
+    def read(self, br: BinaryReader):
+        R7O_pos = br.tell()
+        header = br.bytesToString(br.readBytes(4)).replace("\0", "")
+        br.seek(4, 1)  # zeros ?
 
         offsets = []
-
-        R7O_pos = binaryReader.tell()
-        header = binaryReader.bytesToString(binaryReader.readBytes(4)).replace("\0", "")
-        binaryReader.seek(4, 1)  # zeros ?
-
         for i in range(4):
             # offset 1 = ?
             # offset 2 = ?
             # offest 3 = vertex buffers informations
             # offest 4 = face buffers informations
-            offsets.append(R7O_pos + binaryReader.readUInt())
+            offsets.append(R7O_pos + br.readUInt())
 
-        binaryReader.seek(offsets[0], 0) # Position to matrices ?
-        self.read_unknown(binaryReader)
-        binaryReader.seek(offsets[2], 0) # Position to vertex buffers
-        self.read_vertex_buffers_informations(binaryReader)
-        binaryReader.seek(offsets[3], 0) # Position to face buffers
-        self.read_face_buffers_informations(binaryReader)
+        br.seek(offsets[0], 0) # Position to matrices ?
+        self.read_unknown(br)
+        br.seek(offsets[2], 0) # Position to vertex buffers
+        self.read_vertex_buffers_informations(br)
+        br.seek(offsets[3], 0) # Position to face buffers
+        self.read_face_buffers_informations(br)
 
-    def read_unknown(self, binaryReader):
+    def read_unknown(self, br: BinaryReader):
+        br.seek(4, 1)  # zeros ?
+        matrixCount = br.readUInt() # matrix count ?
+
+    def read_vertex_buffers_informations(self, br: BinaryReader):
+        vertex_information_position = br.tell()
+        br.seek(4, 1)  # zeros ?
+        bufferCount = br.readUInt() # buffers count
         
-        binaryReader.seek(4, 1)  # zeros ?
-        matrixCount = binaryReader.readUInt() # matrix count ?
+        vertexBufferInformations = []
+        for buffer in range(bufferCount): 
+            vertexBufferInformation = VertexBufferInformation()
+            vertexBufferInformation.vertexBufferOffset = vertex_information_position + br.readUInt() # offset to buffer
+            vertexBufferInformation.vertexAttributes = br.readUInt() # vertex attributes
+            vertexBufferInformation.vertexCount = br.readUInt()
 
-    def read_vertex_buffers_informations(self, binaryReader):
-        
-        vertex_buffer_informations = []
+            vertexBufferInformations.append(vertexBufferInformation)
 
-        vertex_information_position = binaryReader.tell()
+        self.get_vertex_buffers(br, vertexBufferInformations)
 
-        binaryReader.seek(4, 1)  # zeros ?
-        buffer_count = binaryReader.readUInt() # buffers count
-        
-        for buffer in range(buffer_count): 
+    def get_vertex_buffers(self, br: BinaryReader, vertexBufferInformations):
+        vertexBufferInformation : VertexBufferInformation
+        for vertexBufferInformation in vertexBufferInformations:
 
-            vertex_buffer_information = Vertex_Buffer_Information()
-
-            vertex_buffer_information.vertex_buffer_offset = vertex_information_position + binaryReader.readUInt() # offset to buffer
-            vertex_buffer_information.vertex_attributes = binaryReader.readUInt() # vertex attributes
-            vertex_buffer_information.vertex_number = binaryReader.readUInt()
-
-            vertex_buffer_informations.append(vertex_buffer_information)
-
-        self.get_vertex_buffers(binaryReader, vertex_buffer_informations)
-
-    def get_vertex_buffers(self, binaryReader, vertex_buffer_informations):
-
-        for vertex_buffer_information in vertex_buffer_informations:
-
-            vertex_buffer = {
-            "positions" : [],
-            "colors" : [],
-            "normals" : [],
-            "texCoords" : []
+            vertexBuffer = {
+                "positions" : [],
+                "colors" : [],
+                "normals" : [],
+                "texCoords" : []
             }
 
             #0x000D8022 = Stride 24
 
-            #print(hex(vertex_buffer_information.vertex_attributes))
-            if vertex_buffer_information.vertex_attributes == 0xD8022:
+            #print(hex(vertex_buffer_information.vertexAttributes))
+            if vertexBufferInformation.vertexAttributes == 0xD8022:
                 print("test3")
-                print(binaryReader.tell())
+                print(br.tell())
 
-            binaryReader.seek(vertex_buffer_information.vertex_buffer_offset)
+            br.seek(vertexBufferInformation.vertexBufferOffset)
             
-            for i in range(vertex_buffer_information.vertex_number):
+            for i in range(vertexBufferInformation.vertexCount):
 
                 # (0x00000002) 2 = Positions (Float)
                 # (0x00000003) 3 = Positions (Half-Float)
 
-                if vertex_buffer_information.vertex_attributes & 0xF == 3:
-                    vertex_buffer["positions"].append([binaryReader.readHalfFloat(), binaryReader.readHalfFloat(), binaryReader.readHalfFloat()])
-                elif vertex_buffer_information.vertex_attributes & 0xF == 2:
-                    vertex_buffer["positions"].append([binaryReader.readFloat(), binaryReader.readFloat(), binaryReader.readFloat()])
+                if vertexBufferInformation.vertexAttributes & 0xF == 3:
+                    vertexBuffer["positions"].append([br.readHalfFloat(), br.readHalfFloat(), br.readHalfFloat()])
+                elif vertexBufferInformation.vertexAttributes & 0xF == 2:
+                    vertexBuffer["positions"].append([br.readFloat(), br.readFloat(), br.readFloat()])
 
                 # (0x00000020) 2 = Colors
 
-                if ((vertex_buffer_information.vertex_attributes >> 4) & 0xF) == 2:
-                    vertex_buffer["colors"].append([binaryReader.readUByte() / 255, binaryReader.readUByte() / 255, binaryReader.readUByte() / 255, binaryReader.readUByte() / 255])
+                if ((vertexBufferInformation.vertexAttributes >> 4) & 0xF) == 2:
+                    vertexBuffer["colors"].append([br.readUByte() / 255, br.readUByte() / 255, br.readUByte() / 255, br.readUByte() / 255])
 
                 # (0x00000400) 4 = Normals (Float)
                 # (0x00000600) 6 = Normals (Half-Float)
                 
-                if ((vertex_buffer_information.vertex_attributes >> 8) & 0xF) == 6:
-                    vertex_buffer["normals"].append(Vector((binaryReader.readHalfFloat(), binaryReader.readHalfFloat(), binaryReader.readHalfFloat())).normalized())
-                elif ((vertex_buffer_information.vertex_attributes >> 8) & 0xF) == 4:
-                    vertex_buffer["normals"].append(Vector((binaryReader.readFloat(), binaryReader.readFloat(), binaryReader.readFloat())).normalized())
+                if ((vertexBufferInformation.vertexAttributes >> 8) & 0xF) == 6:
+                    vertexBuffer["normals"].append(Vector((br.readHalfFloat(), br.readHalfFloat(), br.readHalfFloat())).normalized())
+                elif ((vertexBufferInformation.vertexAttributes >> 8) & 0xF) == 4:
+                    vertexBuffer["normals"].append(Vector((br.readFloat(), br.readFloat(), br.readFloat())).normalized())
             
                 # (0x00010000) 10 = texCoords (Float)
                 # (0x00012000) 12 = texCoords (Float)
                 # (0x00018000) 18 = texCoords (Half-Float)
                 # (0x0001B000) 1B = texCoords (Half-Float)
                 
-                if vertex_buffer_information.vertex_attributes >> 12 == 0x1B:
-                    binaryReader.seek(6, 1)
-                    vertex_buffer["texCoords"].append([binaryReader.readHalfFloat(), binaryReader.readHalfFloat()])
+                if vertexBufferInformation.vertexAttributes >> 12 == 0x1B:
+                    br.seek(6, 1)
+                    vertexBuffer["texCoords"].append([br.readHalfFloat(), br.readHalfFloat()])
                 
-                elif vertex_buffer_information.vertex_attributes >> 12 == 0x18:
-                    vertex_buffer["texCoords"].append([binaryReader.readHalfFloat(), binaryReader.readHalfFloat()])
+                elif vertexBufferInformation.vertexAttributes >> 12 == 0x18:
+                    vertexBuffer["texCoords"].append([br.readHalfFloat(), br.readHalfFloat()])
 
-                elif vertex_buffer_information.vertex_attributes >> 12 == 0xD8: # ???
-                    binaryReader.seek(8, 1)
+                elif vertexBufferInformation.vertexAttributes >> 12 == 0xD8: # ???
+                    br.seek(8, 1)
                 
-                elif vertex_buffer_information.vertex_attributes >> 12 == 0x12:
-                    binaryReader.seek(12, 1)
-                    vertex_buffer["texCoords"].append([binaryReader.readFloat(), binaryReader.readFloat()])
+                elif vertexBufferInformation.vertexAttributes >> 12 == 0x12:
+                    br.seek(12, 1)
+                    vertexBuffer["texCoords"].append([br.readFloat(), br.readFloat()])
                 
-                elif vertex_buffer_information.vertex_attributes >> 12 == 0x10:
-                    vertex_buffer["texCoords"].append([binaryReader.readFloat(), binaryReader.readFloat()])
+                elif vertexBufferInformation.vertexAttributes >> 12 == 0x10:
+                    vertexBuffer["texCoords"].append([br.readFloat(), br.readFloat()])
 
-            self.vertex_buffers.append(vertex_buffer)
+            self.vertexBuffers.append(vertexBuffer)
 
-    def read_face_buffers_informations(self, binaryReader):
-        face_buffer_informations = []
-
-        face_information_position = binaryReader.tell()
-
-        binaryReader.seek(4, 1)  # zeros ?
-        bufferCount = binaryReader.readUInt() # buffers count
+    def read_face_buffers_informations(self, br: BinaryReader):
+        face_information_position = br.tell()
+        br.seek(4, 1)  # zeros ?
+        bufferCount = br.readUInt() # buffers count
         
+        faceBufferInformations = []
         for buffer in range(bufferCount):
-            
-            face_buffer_information = Face_Buffer_Information()
+            faceBufferInformation = FaceBufferInformation()
+            faceBufferInformation.faceBufferOffset = face_information_position + br.readUInt() # offset to buffer
+            faceBufferInformation.faceCount = br.readUInt()
 
-            face_buffer_information.face_buffer_offset = face_information_position + binaryReader.readUInt() # offset to buffer
-            face_buffer_information.face_number = binaryReader.readUInt()
+            faceBufferInformations.append(faceBufferInformation)
 
-            face_buffer_informations.append(face_buffer_information)
+        self.get_face_buffers(br, faceBufferInformations)
 
-        self.get_face_buffers(binaryReader, face_buffer_informations)
+    def get_face_buffers(self, binaryReader: BinaryReader, faceBufferInformations: List[FaceBufferInformation]):
+        faceBufferInformation: FaceBufferInformation
+        for faceBufferInformation in faceBufferInformations:
+            faceBuffer = []
+            for i in range(faceBufferInformation.faceCount):
+                faceBuffer.append(binaryReader.readUShort())
 
-    def get_face_buffers(self, binaryReader, face_buffer_informations):
-
-        for face_buffer_information in face_buffer_informations:
-
-            face_buffer = []
-        
-            for i in range(face_buffer_information.face_number):
-                
-                face_buffer.append(binaryReader.readUShort())
-
-            self.face_buffers.append(face_buffer)
+            self.faceBuffers.append(faceBuffer)

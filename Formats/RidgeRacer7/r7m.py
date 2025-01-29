@@ -1,43 +1,47 @@
 from .r7o import *
 
+from ...Utilities.binaryReader import BinaryReader
+
+class SubmeshGroup:
+    def __init__(self) -> None:
+        self.count: int = 0
+        self.totalCount: int = 0
+
 class R7M:
     def __init__(self):
-        self.submesh_groups = []
+        self.submeshGroups = []
         self.r7o = None
 
-    def read(self, binaryReader):
+    def read(self, br: BinaryReader):
+        R7M_pos = br.tell()
+        header = br.bytesToString(br.readBytes(4)).replace("\0", "")
+        br.seek(4, 1) # zeros ?
 
         offsets = []
-
-        R7M_pos = binaryReader.tell()
-        header = binaryReader.bytesToString(binaryReader.readBytes(4)).replace("\0", "")
-        binaryReader.seek(4, 1) # zeros ?
-
         for i in range(3):
             # offset 1 = submesh groups
             # offset 2 = ?
             # offest 3 = r7o
-            offsets.append(R7M_pos + binaryReader.readUInt())
+            offsets.append(R7M_pos + br.readUInt())
 
-        binaryReader.seek(offsets[0], 0)
-        self.read_submesh_groups(binaryReader)
-        binaryReader.seek(offsets[2], 0)
-        self.read_r7o(binaryReader)
+        br.seek(offsets[0], 0)
+        self.read_submesh_groups(br)
+        br.seek(offsets[2], 0)
+        self.read_r7o(br)
 
-    def read_submesh_groups(self, binaryReader):
+    def read_submesh_groups(self, br: BinaryReader):
         """
         Number of submesh linked to matrix transformation in map file
         """
-        
-        binaryReader.seek(4, 1)  # zeros ?
-        count = binaryReader.readUInt() # submesh group count
+        br.seek(4, 1)  # zeros ?
+        count = br.readUInt() # submesh group count
 
         for i in range(count):
-            submesh_count = binaryReader.readUInt()
-            submesh_total_count = binaryReader.readUInt()
-            self.submesh_groups.append((submesh_count, submesh_total_count))
+            submeshGroup = SubmeshGroup()
+            submeshGroup.count = br.readUInt()
+            submeshGroup.totalCount = br.readUInt()
+            self.submeshGroups.append(submeshGroup)
 
     def read_r7o(self, binaryReader):        
-        
         self.r7o = R7O()
         self.r7o.read(binaryReader)

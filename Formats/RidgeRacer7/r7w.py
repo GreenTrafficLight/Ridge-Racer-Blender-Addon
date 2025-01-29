@@ -1,5 +1,7 @@
 from .r7o import *
 
+from ...Utilities.binaryReader import BinaryReader
+
 class R7W:
     
     def __init__(self):
@@ -15,60 +17,60 @@ class R7W:
             "LOD3" : None
         }
 
-    def read(self, binaryReader):
+    def read(self, br: BinaryReader):
 
-        binaryReader.seek(4, 1) # zeros
+        br.seek(4, 1) # zeros
         
-        self.get_offsets(binaryReader)
-        self.read_lods(binaryReader)
+        self.get_offsets(br)
+        self.read_lods(br)
 
-    def get_offsets(self, binaryReader):        
+    def get_offsets(self, br: BinaryReader):        
         for lod_offset in range(4): # Get lods offset
-            self.lod_offsets.append(binaryReader.readUInt())
+            self.lod_offsets.append(br.readUInt())
         
-    def read_lods(self, binaryReader):
+    def read_lods(self, br: BinaryReader):
         # Read LOD meshes
         lod_number = 0
         for lod_offset in self.lod_offsets:
             if lod_offset != 0:
-                R7W_part = R7W.R7W_PART(binaryReader, lod_offset)
+                R7W_part = R7W.PART(br, lod_offset)
                 self.lods["LOD" + str(lod_number)] = R7W_part
             lod_number += 1
 
-    class R7W_PART(object):
+    class PART(object):
         def __init__(self):
             super().__init__()
             
             self.submeshes = []
 
-        def read(self, binaryReader, part_offset):
+        def read(self, br: BinaryReader, part_offset):
 
             submesh_offsets1 = []
             submesh_offsets2 = []
 
-            binaryReader.seek(part_offset, 0)
-            binaryReader.seek(4, 1)
-            count1 = binaryReader.readUShort() # count of submesh ?
-            count2 = binaryReader.readUShort() # count of submesh ?
-            binaryReader.seek(32, 1)  # zeros ?
+            br.seek(part_offset, 0)
+            br.seek(4, 1)
+            count1 = br.readUShort() # count of submesh ?
+            count2 = br.readUShort() # count of submesh ?
+            br.seek(32, 1)  # zeros ?
 
-            self.get_submesh_offsets(binaryReader, submesh_offsets1, count1, part_offset)
-            self.get_submesh_offsets(binaryReader, submesh_offsets2, count2, part_offset)
+            self.get_submesh_offsets(br, submesh_offsets1, count1, part_offset)
+            self.get_submesh_offsets(br, submesh_offsets2, count2, part_offset)
 
             self.read_r7o(submesh_offsets1)
             self.read_r7o(submesh_offsets2)
 
-        def get_submesh_offsets(self, binaryReader, list, count, part_offset):
+        def get_submesh_offsets(self, br: BinaryReader, list, count, part_offset):
             for i in range(count):
-                binaryReader.readUInt() # ?
-                binaryReader.readUInt() # ?
-                submesh_offset = binaryReader.readUInt()
+                br.readUInt() # ?
+                br.readUInt() # ?
+                submesh_offset = br.readUInt()
                 if submesh_offset != 0:
                     list.append(part_offset + submesh_offset) # offset to submesh data
 
-        def read_r7o(self, binaryReader, submesh_offsets):
+        def read_r7o(self, br: BinaryReader, submesh_offsets):
             for offset in submesh_offsets:
-                binaryReader.seek(offset, 0)
+                br.seek(offset, 0)
                 r7o = R7O()
-                r7o.read(binaryReader)
+                r7o.read(br)
                 self.submeshes.append(r7o)
