@@ -117,25 +117,25 @@ class R7C:
         def __init__(self):
             pass
 
-        def read(self, binaryReader: BinaryReader, part_offset, part_index, hierarchy_dictionary):
+        def read(self, br: BinaryReader, part_offset, part_index, hierarchy_dictionary):
             
             indexes1 = []
             indexes2 = []
 
-            submesh_offsets1 = []
-            submesh_offsets2 = []
+            submeshOffsets1 = []
+            submeshoffsets2 = []
 
-            binaryReader.seek(part_offset, 0)
-            binaryReader.seek(4, 1)
-            count1 = binaryReader.readUShort() # count of submesh ?
-            count2 = binaryReader.readUShort() # count of submesh ?
-            binaryReader.seek(32, 1)  # zeros ?
+            br.seek(part_offset, 0)
+            br.seek(4, 1)
+            count1 = br.readUShort() # count of submesh ?
+            count2 = br.readUShort() # count of submesh ?
+            br.seek(32, 1)  # zeros ?
 
-            self.get_submesh_offsets(binaryReader, submesh_offsets1, indexes1, count1, part_offset)
-            self.get_submesh_offsets(binaryReader, submesh_offsets2, indexes2, count2, part_offset)
+            self.get_submesh_offsets(br, submeshOffsets1, indexes1, count1, part_offset)
+            self.get_submesh_offsets(br, submeshoffsets2, indexes2, count2, part_offset)
 
-            self.read_r7o(binaryReader, submesh_offsets1, indexes1, part_index, hierarchy_dictionary)
-            self.read_r7o(binaryReader, submesh_offsets2, indexes2, part_index, hierarchy_dictionary)
+            self.read_r7o(br, submeshOffsets1, indexes1, part_index, hierarchy_dictionary)
+            self.read_r7o(br, submeshoffsets2, indexes2, part_index, hierarchy_dictionary)
 
         def get_submesh_offsets(self, binaryReader: BinaryReader, list, indexes, count: int, part_offset: int):
             
@@ -145,12 +145,12 @@ class R7C:
                 if submesh_offset != 0:
                     list.append(part_offset + submesh_offset) # offset to submesh data
 
-        def read_r7o(self, binaryReader: BinaryReader, submesh_offsets, indexes, part_index, hierarchy_dictionary):
+        def read_r7o(self, br: BinaryReader, submeshOffsets, indexes, part_index, hierarchy_dictionary):
             
-            for i in range(len(submesh_offsets)):
-                binaryReader.seek(submesh_offsets[i], 0)
+            for i in range(len(submeshOffsets)):
+                br.seek(submeshOffsets[i], 0)
                 r7o = R7O()
-                r7o.read(binaryReader)
+                r7o.read(br)
                 hierarchy_dictionary[car_hierarchy[part_index]].append((r7o, indexes[i]))
 
     class TRANSFORMATION:

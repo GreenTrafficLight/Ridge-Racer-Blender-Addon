@@ -57,8 +57,8 @@ class R7W:
             self.get_submesh_offsets(br, submesh_offsets1, count1, part_offset)
             self.get_submesh_offsets(br, submesh_offsets2, count2, part_offset)
 
-            self.read_r7o(submesh_offsets1)
-            self.read_r7o(submesh_offsets2)
+            self.read_r7o(br, submesh_offsets1)
+            self.read_r7o(br, submesh_offsets2)
 
         def get_submesh_offsets(self, br: BinaryReader, list, count, part_offset):
             for i in range(count):

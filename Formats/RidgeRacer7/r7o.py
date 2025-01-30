@@ -44,6 +44,12 @@ class R7O:
     def read_unknown(self, br: BinaryReader):
         br.seek(4, 1)  # zeros ?
         matrixCount = br.readUInt() # matrix count ?
+        offset = br.readUInt()
+
+    def read_unknown2(self, br: BinaryReader):
+        br.seek(4, 1)  # zeros
+        count = br.readUInt()
+        offset = br.readUInt()
 
     def read_vertex_buffers_informations(self, br: BinaryReader):
         vertex_information_position = br.tell()
