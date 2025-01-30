@@ -167,8 +167,8 @@ class R7C:
 
             self.parent_mesh_index = binaryReader.readUShort()
             binaryReader.seek(4, 1)
-            translation = binaryReader.readVector3()
+            translation = binaryReader.readVector3f()
             self.translation = Vector((translation[0], translation[1], translation[2]))
-            rotation = binaryReader.readVector3()
+            rotation = binaryReader.readVector3f()
             self.rotation = Vector((rotation[0], rotation[1], rotation[2]))
             binaryReader.seek(40, 1)

@@ -19,19 +19,19 @@ class R7M:
 
         offsets = []
         for i in range(3):
-            # offset 1 = submesh groups
+            # offset 1 = mesh groups
             # offset 2 = ?
             # offest 3 = r7o
             offsets.append(R7M_pos + br.readUInt())
 
         br.seek(offsets[0], 0)
-        self.read_submesh_groups(br)
+        self.readMeshGroups(br)
         br.seek(offsets[2], 0)
         self.read_r7o(br)
 
-    def read_submesh_groups(self, br: BinaryReader):
+    def readMeshGroups(self, br: BinaryReader):
         """
-        Number of submesh linked to matrix transformation in map file
+        Number of mesh linked to matrix transformation in map file
         """
         br.seek(4, 1)  # zeros ?
         count = br.readUInt() # submesh group count
