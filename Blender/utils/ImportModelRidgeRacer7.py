@@ -44,13 +44,13 @@ def build_r7c_hierarchy(data: R7C):
                         
                         #empty_parent = part_node
                         
-                        if mesh[1][0] in data.transformations:
-                            #empty_parent.location = data.transformations[mesh[1][0]].translation
-                            empty_parent = add_empty(str(mesh[1][0]), part_node, data.transformations[mesh[1][0]].translation, data.transformations[mesh[1][0]].rotation)
-                        else:
-                            empty_parent = add_empty(str(mesh[1][0]), part_node)
+                        # if mesh[1][0] in data.transformations:
+                        #     #empty_parent.location = data.transformations[mesh[1][0]].translation
+                        #     empty_parent = add_empty(str(mesh[1][0]), part_node, data.transformations[mesh[1][0]].translation, data.transformations[mesh[1][0]].rotation)
+                        # else:
+                        #     empty_parent = add_empty(str(mesh[1][0]), part_node)
 
-                        build_r7o(lod, mesh[0], empty_parent, index)
+                        build_r7o(lod, mesh[0], part_node, index)
                         index += 1
                     
 def build_r7w_hierarchy(data: R7W):
