@@ -10,6 +10,7 @@ from bpy.types import (Panel,
                        )
 
 from .Blender.operators.OT_Model_Import import *
+from .Blender.panels.PT_Map_Importer import *
 
 bl_info = {
 	"name": "Ridge Racer Modern Era Models format",
@@ -26,7 +27,9 @@ bl_info = {
 
 
 classes = [
-    RR_OT_Model_Import
+    RR_OT_Model_Import,
+    MapProperties,
+    RR_PT_Map_Importer
 ]
 
 # Only needed if you want to add into a dynamic menu
