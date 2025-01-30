@@ -27,8 +27,8 @@ class RR_OT_Model_Import(Operator, ImportHelper):
 
         clear_scene: BoolProperty(
             name="Clear scene",
-            description="Example Tooltip",
-            default=True,
+            description="Clear the scene",
+            default=False,
         )
 
         def execute(self, context):   
@@ -63,6 +63,10 @@ def importModel(filepath: str, clear_scene: bool):
             for offset in range(R6M_count):
                 R6M_datas.append((bs.readUInt(), bs.readUInt()))
 
+    elif header == "R6C":
+        r6c = R6C()
+        r6c.read(bs)
+        build_r6c_hierarchy(r6c)
     elif header == "R7C":
         r7c = R7C()
         r7c.read(bs)
@@ -71,9 +75,5 @@ def importModel(filepath: str, clear_scene: bool):
         r7w = R7W()
         r7w.read(bs)
         build_r7w_hierarchy(r7w)
-    elif header == "R6C":
-        r6c = R6C()
-        r6c.read(bs)
-        build_r6c_hierarchy(r6c)
     
     return {'FINISHED'}
