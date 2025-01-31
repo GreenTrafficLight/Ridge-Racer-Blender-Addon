@@ -23,7 +23,12 @@ class RR_PT_Map_Importer(bpy.types.Panel):
         props = context.scene.my_map_properties
         
         layout.label(text="Map Information Folder")
-        layout.prop(props, "map_info_folder")
+        layout.prop(props, "map_info_folder", text="")
         
         layout.label(text="Map Model Folder")
-        layout.prop(props, "map_model_folder")
+        layout.prop(props, "map_model_folder", text="")
+
+        layout.separator()  # Adds spacing
+
+        # Button that calls the operator
+        layout.operator("import_rr.mapimport_operator", text="Import Map") 

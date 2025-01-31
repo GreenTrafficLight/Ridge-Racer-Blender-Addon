@@ -10,6 +10,7 @@ from bpy.types import (Panel,
                        )
 
 from .Blender.operators.OT_Model_Import import *
+from .Blender.operators.OT_Map_Import import *
 from .Blender.panels.PT_Map_Importer import *
 
 bl_info = {
@@ -17,7 +18,7 @@ bl_info = {
 	"description": "Import Ridge Racer Modern Era Model",
 	"author": "GreenTrafficLight",
 	"version": (1, 1),
-	"blender": (2, 80, 0),
+	"blender": (4, 0, 0),
 	"location": "File > Import > Ridge Racer Modern Era Importer",
 	"warning": "",
 	"wiki_url": "",
@@ -27,8 +28,9 @@ bl_info = {
 
 
 classes = [
-    RR_OT_Model_Import,
     MapProperties,
+    RR_OT_Model_Import,
+    RR_OT_Map_Import,
     RR_PT_Map_Importer
 ]
 
@@ -39,6 +41,7 @@ def menu_func_import(self, context):
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.Scene.my_map_properties = bpy.props.PointerProperty(type=MapProperties)
     
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
