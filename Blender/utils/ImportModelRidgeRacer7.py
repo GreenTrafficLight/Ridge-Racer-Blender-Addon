@@ -72,7 +72,10 @@ def build_arcl_hierarchy(data: ARCL):
         r7m_name = data.paths[i].split("\\")[-1]
         empty = add_empty(r7m_name[:-4], None)
 
-        build_r7o(None, data.R7M_list[i].r7o, empty, None)
+        for r7m in data.R7M_list:
+            print("test")
+
+        #build_r7o(None, data.R7M_list[i].r7o, empty, None)
 
 def build_r7o(lod: str, submesh: R7O, part_empty, count: int):
 
