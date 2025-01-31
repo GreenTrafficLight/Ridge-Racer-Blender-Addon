@@ -11,6 +11,9 @@ class ObjectInformationContainer:
         self.offset = br.readUInt()
         self.count = br.readUInt()
 
+    def isNull(self):
+        return self.offset == 0 and self.count == 0
+
 class ObjectTransformation:
 
     def __init__(self):
@@ -26,13 +29,11 @@ class ObjectTransformation:
 class ObjectInformation:
 
     def __init__(self):
-        self.name = ""
         self.type = ""
         self.containers: List[ObjectInformationContainer] = []
         self.transformations: List[ObjectInformation] = []
 
     def read(self, br: BinaryReader):
-        self.name = br.bytesToString(br.readBytes(32)).replace("\0", "")
         self.type = br.bytesToString(br.readBytes(32)).replace("\0", "")
 
         for i in range(4):
@@ -46,8 +47,9 @@ class ObjectInformation:
 
             self.containers.append(map_information_container)
 
-        br.seek(self.containers[0].offset, 0)
-        self.readObjetTransformations(br)
+        if not self.containers[0].isNull():
+            br.seek(self.containers[0].offset, 0)
+            self.readObjetTransformations(br)
 
     def readObjetTransformations(self, br: BinaryReader):
         unkOffset1 = br.readUInt()
@@ -56,7 +58,7 @@ class ObjectInformation:
         objectTransformationsOffset = br.readUInt()
         objectTransformationsCount = br.readUInt()
         br.seek(objectTransformationsOffset, 0)
-        for objectTransformation in objectTransformationsCount:
+        for objectTransformation in range(objectTransformationsCount):
             transformation = ObjectTransformation()
             transformation.read(br)
             self.transformations.append(transformation)
