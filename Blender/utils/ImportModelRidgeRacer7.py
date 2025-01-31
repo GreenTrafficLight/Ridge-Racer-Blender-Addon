@@ -8,7 +8,7 @@ from mathutils import *
 
 from ...Utilities import *
 from ...Formats import *
-
+from ...Formats.RidgeRacer7.Map import *
 
 def build_r7c_hierarchy(data: R7C):
     for lod, hierarchy in data.lods.items():
@@ -65,21 +65,35 @@ def build_r7w_hierarchy(data: R7W):
                 build_r7o(None, submesh, lod_empty, count)
                 count += 1
 
-def build_arcl_hierarchy(data: ARCL):
+def build_arcl_hierarchy(data: ARCL, mapInfos: MAP = None):
 
-    for i in range(len(data.R7M_list)):
+    print("Importing ArcL")
 
-        r7m_name = data.paths[i].split("\\")[-1]
-        empty = add_empty(r7m_name[:-4], None)
+    modelEmpty = add_empty("Model", empty_rotation=( radians(90), 0, 0 ))
 
-        for r7m in data.R7M_list:
-            print("test")
+    r7m : R7M
+    for i, r7m in enumerate(data.R7M_list):
+        print(f"{i} / {len(data.R7M_list)}")
+        r7mName = (data.paths[i].split("\\")[-1])[:-4]
+        r7mEmpty = add_empty(r7mName, modelEmpty)
 
-        #build_r7o(None, data.R7M_list[i].r7o, empty, None)
+        objectInfo: ObjectInformation = mapInfos.objects_information.get(r7mName)
+        
+        meshGroup : MeshGroup
+        for meshGroupIndex, meshGroup in enumerate(r7m.MeshGroups):
+        
+            meshGroupEmpty = add_empty(f"{r7mName}_{meshGroupIndex}", r7mEmpty)
+            if objectInfo and objectInfo.transformations != []:
+                transformationMatrix = (Matrix(objectInfo.transformations[meshGroupIndex].transformation_matrix)).transposed()
+                meshGroupEmpty.location = transformationMatrix.translation
+            build_r7o(None, r7m.r7o, meshGroupEmpty, None, meshGroup.startIndex, meshGroup.endIndex)
 
-def build_r7o(lod: str, submesh: R7O, part_empty, count: int):
 
-    for buffer in range(len(submesh.vertexBuffers)):
+
+def build_r7o(lod: str, submesh: R7O, part_empty, count: int, startIndex = 0, endIndex = 0):
+
+    endIndex = len(submesh.vertexBuffers) if endIndex == 0 else endIndex
+    for buffer in range(startIndex, endIndex):
 
         if part_empty.parent != None:
             mesh_name = part_empty.parent.name + "_" + str(buffer)

@@ -16,11 +16,15 @@ class RR_OT_Map_Import(bpy.types.Operator):
             if props.map_model_folder == "":
                 return {'FINISHED'}
             
-            importMap(props.map_info_folder, props.map_model_folder)
+            importMap(props.map_info_folder, props.map_model_folder, props.clear_scene)
 
             return {'FINISHED'}
         
-def importMap(mapFilePath: str, modelFilePath: str):
+def importMap(mapFilePath: str, modelFilePath: str, clear_scene: bool):
+    if clear_scene:
+        clearScene()
+
+    map = None
     with open(mapFilePath + "Map", "rb") as mapFile:
         bs = BinaryReader(mapFile, ">")
 
@@ -34,4 +38,4 @@ def importMap(mapFilePath: str, modelFilePath: str):
         if header == "ArcL":
             arcl = ARCL(bs)
             arcl.read(bs)
-            build_arcl_hierarchy(arcl)
+            build_arcl_hierarchy(arcl, map)

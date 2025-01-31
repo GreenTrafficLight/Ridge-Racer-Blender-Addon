@@ -6,6 +6,12 @@ class MeshGroup:
     def __init__(self) -> None:
         self.subMeshCount: int = 0
         self.startIndex: int = 0
+        self.endIndex: int = 0
+    
+    def read(self, br: BinaryReader):
+        self.subMeshCount = br.readUInt()
+        self.startIndex = br.readUInt()
+        self.endIndex = self.startIndex + self.subMeshCount
 
 class R7M:
     def __init__(self):
@@ -38,8 +44,7 @@ class R7M:
 
         for i in range(count):
             meshGroup = MeshGroup()
-            meshGroup.subMeshCount = br.readUInt()
-            meshGroup.startIndex = br.readUInt()
+            meshGroup.read(br)
             self.MeshGroups.append(meshGroup)
 
     def read_r7o(self, binaryReader):        
