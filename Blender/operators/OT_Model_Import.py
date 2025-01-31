@@ -32,9 +32,9 @@ class RR_OT_Model_Import(Operator, ImportHelper):
         )
 
         def execute(self, context):   
-                importModel(self.filepath, self.clear_scene)
+            importModel(self.filepath, self.clear_scene)
 
-                return {'FINISHED'}
+            return {'FINISHED'}
         
 def importModel(filepath: str, clear_scene: bool):
     if clear_scene:
