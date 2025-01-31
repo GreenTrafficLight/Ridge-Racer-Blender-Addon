@@ -5,12 +5,12 @@ from .information import *
 class MAP:
 
     def __init__(self):
-        pass
+        self.objects_information = {}
 
     def read(self, br: BinaryReader):
-        offset1 = br.readUInt()
         br.readUInt()
-
+        offset1 = br.readUInt()
+        offset2 = br.readUInt()
         file_size = br.readUInt()
 
         br.seek(offset1, 0)
@@ -26,7 +26,9 @@ class MAP:
 
         for offset in object_information_offsets:
             br.seek(offset, 0)
+            name = br.bytesToString(br.readBytes(32)).replace("\0", "")
             information = ObjectInformation()
             information.read(br)
+            self.objects_information[name] = information
 
         
