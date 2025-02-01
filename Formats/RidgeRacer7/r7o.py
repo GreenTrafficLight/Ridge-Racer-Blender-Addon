@@ -81,9 +81,12 @@ class R7O:
             #0x000D8022 = Stride 24
 
             #print(hex(vertex_buffer_information.vertexAttributes))
-            if vertexBufferInformation.vertexAttributes == 0xD8022:
-                print("test3")
-                print(br.tell())
+            # if vertexBufferInformation.vertexAttributes == 0xD8022:
+            #     print("test3")
+            #     print(br.tell())
+
+            print(hex(vertexBufferInformation.vertexAttributes))
+            print(br.tell())
 
             br.seek(vertexBufferInformation.vertexBufferOffset)
             
@@ -104,35 +107,45 @@ class R7O:
 
                 # (0x00000400) 4 = Normals (Float)
                 # (0x00000600) 6 = Normals (Half-Float)
-                
-                if ((vertexBufferInformation.vertexAttributes >> 8) & 0xF) == 6:
-                    vertexBuffer["normals"].append(Vector((br.readHalfFloat(), br.readHalfFloat(), br.readHalfFloat())).normalized())
-                elif ((vertexBufferInformation.vertexAttributes >> 8) & 0xF) == 4:
+            
+                if ((vertexBufferInformation.vertexAttributes >> 8) & 0xF) == 4:
                     vertexBuffer["normals"].append(Vector((br.readFloat(), br.readFloat(), br.readFloat())).normalized())
+                elif ((vertexBufferInformation.vertexAttributes >> 8) & 0xF) == 6:
+                    vertexBuffer["normals"].append(Vector((br.readHalfFloat(), br.readHalfFloat(), br.readHalfFloat())).normalized())
             
                 # (0x00010000) 10 = texCoords (Float)
                 # (0x00012000) 12 = texCoords (Float)
                 # (0x00018000) 18 = texCoords (Half-Float)
                 # (0x0001B000) 1B = texCoords (Half-Float)
+                                
+                if vertexBufferInformation.vertexAttributes >> 12 & 0xFF == 0x10:
+                    vertexBuffer["texCoords"].append([br.readFloat(), br.readFloat()])
                 
-                if vertexBufferInformation.vertexAttributes >> 12 == 0x1B:
-                    br.seek(6, 1)
-                    vertexBuffer["texCoords"].append([br.readHalfFloat(), br.readHalfFloat()])
-                
-                elif vertexBufferInformation.vertexAttributes >> 12 == 0x18:
-                    vertexBuffer["texCoords"].append([br.readHalfFloat(), br.readHalfFloat()])
-
-                elif vertexBufferInformation.vertexAttributes >> 12 == 0xD8: # ???
-                    br.seek(8, 1)
-                
-                elif vertexBufferInformation.vertexAttributes >> 12 == 0x12:
+                elif vertexBufferInformation.vertexAttributes >> 12 & 0xFF == 0x12:
                     br.seek(12, 1)
                     vertexBuffer["texCoords"].append([br.readFloat(), br.readFloat()])
                 
-                elif vertexBufferInformation.vertexAttributes >> 12 == 0x10:
+                elif vertexBufferInformation.vertexAttributes >> 12 & 0xFF == 0x18:
+                    vertexBuffer["texCoords"].append([br.readHalfFloat(), br.readHalfFloat()])
+
+                elif vertexBufferInformation.vertexAttributes >> 12 & 0xFF == 0x1B:
+                    br.seek(6, 1)
+                    vertexBuffer["texCoords"].append([br.readHalfFloat(), br.readHalfFloat()])
+
+                elif vertexBufferInformation.vertexAttributes >> 12 & 0xFF == 0xD8: # ???
+                    br.seek(8, 1)
+
+                elif vertexBufferInformation.vertexAttributes >> 12 & 0xFF == 0xDB:
+                    br.seek(6, 1)
                     vertexBuffer["texCoords"].append([br.readFloat(), br.readFloat()])
 
+                #
+
+                if vertexBufferInformation.vertexAttributes >> 20 & 0xF == 0x6:
+                    br.seek(6, 1)
+
             self.vertexBuffers.append(vertexBuffer)
+
 
     def read_face_buffers_informations(self, br: BinaryReader):
         face_information_position = br.tell()
