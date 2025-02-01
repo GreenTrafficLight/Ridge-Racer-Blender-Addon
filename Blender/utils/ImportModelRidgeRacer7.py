@@ -77,7 +77,9 @@ def build_arcl_hierarchy(data: ARCL, mapInfos: MAP = None):
         r7mName = (data.paths[i].split("\\")[-1])[:-4]
         r7mEmpty = add_empty(r7mName, modelEmpty)
 
-        objectInfo: ObjectInformation = mapInfos.objects_information.get(r7mName)
+        objectInfo = None
+        if mapInfos:
+            objectInfo: ObjectInformation = mapInfos.objects_information.get(r7mName)
         
         meshGroup : MeshGroup
         for meshGroupIndex, meshGroup in enumerate(r7m.MeshGroups):
