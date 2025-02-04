@@ -117,6 +117,7 @@ class R7O:
                 # (0x00012000) 12 = texCoords (Float)
                 # (0x00018000) 18 = texCoords (Half-Float)
                 # (0x0001B000) 1B = texCoords (Half-Float)
+                # (0x000DB000) DB = texCoords
                                 
                 if vertexBufferInformation.vertexAttributes >> 12 & 0xFF == 0x10:
                     vertexBuffer["texCoords"].append([br.readFloat(), br.readFloat()])

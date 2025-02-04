@@ -10,7 +10,9 @@ from ...Utilities import *
 from ...Formats import *
 from ...Formats.RidgeRacer7.Map import *
 
-def build_r7c_hierarchy(data: R7C):
+def build_r7c(data: R7C):
+    lod: str
+    hierarchy: R7C.LOD
     for lod, hierarchy in data.lods.items():
         
         if hierarchy :
@@ -97,21 +99,17 @@ def build_r7o(lod: str, submesh: R7O, part_empty, count: int, startIndex = 0, en
     endIndex = len(submesh.vertexBuffers) if endIndex == 0 else endIndex
     for buffer in range(startIndex, endIndex):
 
-        if part_empty.parent != None:
-            mesh_name = part_empty.parent.name + "_" + str(buffer)
-        else:
-            mesh_name = part_empty.name + "_" + str(buffer)
-        
-        
-        if lod != None:
-            mesh_name = lod + "_" + mesh_name
-        if count != None:
-            mesh_name = mesh_name + "_" + str(count)
+        mesh_name = f"{part_empty.parent.name if part_empty.parent else part_empty.name}_{buffer}"
+
+        if lod is not None:
+            mesh_name = f"{lod}_{part_empty.name}"
+
+        if count is not None:
+            mesh_name = f"{mesh_name}_{count}"
+
 
         mesh = bpy.data.meshes.new(mesh_name)
         obj = bpy.data.objects.new(mesh_name, mesh)
-        
-        #obj.rotation_euler = (radians(90), 0, 0)
 
         if bpy.app.version >= (2, 80, 0):
             part_empty.users_collection[0].objects.link(obj)
@@ -146,15 +144,20 @@ def build_r7o(lod: str, submesh: R7O, part_empty, count: int, startIndex = 0, en
             try:
                 face = bm.faces.new([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]])
                 face.smooth = True
-                facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
             except:
-                pass
-                # print(shape.geomName)
+                for Face in facesList:
+                    if set([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]) == set(Face[1]):
+                        face = Face[0].copy(verts=False, edges=True)
+                        face.normal_flip()
+                        face.smooth = True
+                        break
+
+            facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
 
         # Set uv
         if submesh.vertexBuffers[buffer]["texCoords"] != []:
+            uv_layer1 = bm.loops.layers.uv.verify()
             for f in bm.faces:
-                uv_layer1 = bm.loops.layers.uv.verify()
                 for l in f.loops:
                     l[uv_layer1].uv =  [submesh.vertexBuffers[buffer]["texCoords"][l.vert.index][0], 1 - submesh.vertexBuffers[buffer]["texCoords"][l.vert.index][1]]
 
