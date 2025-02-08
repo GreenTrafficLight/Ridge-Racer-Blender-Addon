@@ -72,7 +72,7 @@ def importModel(filepath: str, clear_scene: bool):
     elif header == "R7C":
         r7c = R7C()
         r7c.read(br)
-        build_r7c_hierarchy(r7c)
+        build_r7c(r7c)
     elif header == "R7W":
         r7w = R7W()
         r7w.read(br)
