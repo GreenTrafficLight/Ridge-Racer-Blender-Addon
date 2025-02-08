@@ -17,6 +17,8 @@ from ...Utilities import *
 from ..utils.ImportModelRidgeRacer6 import *
 from ..utils.ImportModelRidgeRacer7 import *
 
+from ...Formats.RidgeRacerVita.rnc import *
+
 class RR_OT_Model_Import(Operator, ImportHelper):
         """Load a Ridge Racer model file"""
         bl_idname = "import_rr.data"
@@ -42,38 +44,42 @@ def importModel(filepath: str, clear_scene: bool):
 
     file = open(filepath, 'rb')
     filename =  filepath.split("\\")[-1]
-    bs = BinaryReader(file, ">")
-    header = bs.bytesToString(bs.readBytes(4)).replace("\0", "")
+    br = BinaryReader(file, ">")
+    header = br.bytesToString(br.readBytes(4)).replace("\0", "")
     
     if filename == "Model":
         
         if header == "ArcL":
-            arcl = ARCL(bs)
-            arcl.read(bs)
+            arcl = ARCL(br)
+            arcl.read(br)
             build_arcl_hierarchy(arcl)
         else:
             R6M_datas = []
 
-            bs.seek(0, 0)
+            br.seek(0, 0)
 
-            R6M_count = bs.readUInt()
-            R6M_list_offset = bs.readUInt()
+            R6M_count = br.readUInt()
+            R6M_list_offset = br.readUInt()
             
-            bs.seek(R6M_list_offset, 0)
+            br.seek(R6M_list_offset, 0)
             for offset in range(R6M_count):
-                R6M_datas.append((bs.readUInt(), bs.readUInt()))
+                R6M_datas.append((br.readUInt(), br.readUInt()))
 
     elif header == "R6C":
         r6c = R6C()
-        r6c.read(bs)
+        r6c.read(br)
         build_r6c_hierarchy(r6c)
     elif header == "R7C":
         r7c = R7C()
-        r7c.read(bs)
+        r7c.read(br)
         build_r7c_hierarchy(r7c)
     elif header == "R7W":
         r7w = R7W()
-        r7w.read(bs)
+        r7w.read(br)
         build_r7w_hierarchy(r7w)
+    elif header == "RNC":
+        br.endian = "<"
+        rnc = RNC()
+        rnc.read(br)
     
     return {'FINISHED'}
