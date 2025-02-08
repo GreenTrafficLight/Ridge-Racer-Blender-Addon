@@ -31,7 +31,7 @@ class ObjectInformation:
     def __init__(self):
         self.type = ""
         self.containers: List[ObjectInformationContainer] = []
-        self.transformations: List[ObjectInformation] = []
+        self.transformations: List[ObjectTransformation] = []
 
     def read(self, br: BinaryReader):
         self.type = br.bytesToString(br.readBytes(32)).replace("\0", "")

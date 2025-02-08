@@ -12,6 +12,13 @@ class MapProperties(bpy.types.PropertyGroup):
         subtype='DIR_PATH'
     )
 
+    clear_scene: bpy.props.BoolProperty(
+        name="Clear scene",
+        description="Clear the scene",
+        default=False,
+    )
+
+
 class RR_PT_Map_Importer(bpy.types.Panel):
     bl_label = "Map Importer"
     bl_idname = "RR_PT_map_importer"
@@ -27,6 +34,9 @@ class RR_PT_Map_Importer(bpy.types.Panel):
         
         layout.label(text="Map Model Folder")
         layout.prop(props, "map_model_folder", text="")
+
+        row = layout.row()
+        row.prop(props, "clear_scene")
 
         layout.separator()  # Adds spacing
 

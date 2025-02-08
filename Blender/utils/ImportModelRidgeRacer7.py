@@ -8,9 +8,11 @@ from mathutils import *
 
 from ...Utilities import *
 from ...Formats import *
+from ...Formats.RidgeRacer7.Map import *
 
-
-def build_r7c_hierarchy(data: R7C):
+def build_r7c(data: R7C):
+    lod: str
+    hierarchy: R7C.LOD
     for lod, hierarchy in data.lods.items():
         
         if hierarchy :
@@ -65,37 +67,49 @@ def build_r7w_hierarchy(data: R7W):
                 build_r7o(None, submesh, lod_empty, count)
                 count += 1
 
-def build_arcl_hierarchy(data: ARCL):
+def build_arcl_hierarchy(data: ARCL, mapInfos: MAP = None):
 
-    for i in range(len(data.R7M_list)):
+    print("Importing ArcL")
 
-        r7m_name = data.paths[i].split("\\")[-1]
-        empty = add_empty(r7m_name[:-4], None)
+    modelEmpty = add_empty("Model", empty_rotation=( radians(90), 0, 0 ))
 
-        for r7m in data.R7M_list:
-            print("test")
+    r7m : R7M
+    for i, r7m in enumerate(data.R7M_list):
+        print(f"{i} / {len(data.R7M_list)}")
+        r7mName = (data.paths[i].split("\\")[-1])[:-4]
+        r7mEmpty = add_empty(r7mName, modelEmpty)
 
-        #build_r7o(None, data.R7M_list[i].r7o, empty, None)
-
-def build_r7o(lod: str, submesh: R7O, part_empty, count: int):
-
-    for buffer in range(len(submesh.vertexBuffers)):
-
-        if part_empty.parent != None:
-            mesh_name = part_empty.parent.name + "_" + str(buffer)
-        else:
-            mesh_name = part_empty.name + "_" + str(buffer)
+        objectInfo = None
+        if mapInfos:
+            objectInfo: ObjectInformation = mapInfos.objects_information.get(r7mName)
         
+        meshGroup : MeshGroup
+        for meshGroupIndex, meshGroup in enumerate(r7m.MeshGroups):
         
-        if lod != None:
-            mesh_name = lod + "_" + mesh_name
-        if count != None:
-            mesh_name = mesh_name + "_" + str(count)
+            meshGroupEmpty = add_empty(f"{r7mName}_{meshGroupIndex}", r7mEmpty)
+            if objectInfo and objectInfo.transformations != []:
+                transformationMatrix = (Matrix(objectInfo.transformations[meshGroupIndex].transformation_matrix)).transposed()
+                meshGroupEmpty.location = transformationMatrix.translation
+            build_r7o(None, r7m.r7o, meshGroupEmpty, None, meshGroup.startIndex, meshGroup.endIndex)
+
+
+
+def build_r7o(lod: str, submesh: R7O, part_empty, count: int, startIndex = 0, endIndex = 0):
+
+    endIndex = len(submesh.vertexBuffers) if endIndex == 0 else endIndex
+    for buffer in range(startIndex, endIndex):
+
+        mesh_name = f"{part_empty.parent.name if part_empty.parent else part_empty.name}_{buffer}"
+
+        if lod is not None:
+            mesh_name = f"{lod}_{part_empty.name}"
+
+        if count is not None:
+            mesh_name = f"{mesh_name}_{count}"
+
 
         mesh = bpy.data.meshes.new(mesh_name)
         obj = bpy.data.objects.new(mesh_name, mesh)
-        
-        #obj.rotation_euler = (radians(90), 0, 0)
 
         if bpy.app.version >= (2, 80, 0):
             part_empty.users_collection[0].objects.link(obj)
@@ -130,15 +144,20 @@ def build_r7o(lod: str, submesh: R7O, part_empty, count: int):
             try:
                 face = bm.faces.new([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]])
                 face.smooth = True
-                facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
             except:
-                pass
-                # print(shape.geomName)
+                for Face in facesList:
+                    if set([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]) == set(Face[1]):
+                        face = Face[0].copy(verts=False, edges=True)
+                        face.normal_flip()
+                        face.smooth = True
+                        break
+
+            facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
 
         # Set uv
         if submesh.vertexBuffers[buffer]["texCoords"] != []:
+            uv_layer1 = bm.loops.layers.uv.verify()
             for f in bm.faces:
-                uv_layer1 = bm.loops.layers.uv.verify()
                 for l in f.loops:
                     l[uv_layer1].uv =  [submesh.vertexBuffers[buffer]["texCoords"][l.vert.index][0], 1 - submesh.vertexBuffers[buffer]["texCoords"][l.vert.index][1]]
 
