@@ -1,6 +1,12 @@
 import struct
 import numpy as np
 
+from enum import Enum
+
+class Endianess(Enum):
+    LITTLE_ENDIAN = 0
+    BIG_ENDIAN = 1
+
 class BinaryReader:
 
     def __init__(self, data, endian="<"):
@@ -8,6 +14,10 @@ class BinaryReader:
         self.endian = endian
         
         self.seek(0)
+
+    @property
+    def position(self):
+        return self.tell()
 
     def seek(self, offset, option=0):
         if option == 1:
@@ -117,3 +127,7 @@ class BinaryReader:
                 if b < 127:
                     string += chr(b)
             return string
+        
+    def readBytesToString(self, size, encoding="utf-8"):
+        byteArray = self.readBytes(size)
+        return self.bytesToString(byteArray, encoding)
