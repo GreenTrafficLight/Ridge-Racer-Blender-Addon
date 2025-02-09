@@ -6,54 +6,85 @@ class NDVI:
         self.unk1 = 0
         self.count1 = 0
 
-        self.subMeshInformations = []
-        self.subMeshes = []
+        self.meshInformations = []
+        self.meshes = []
+
+    class Header:
+        def __init__(self):
+            pass
+
+        def read(self, br):
+            self.ndviOffset = br.tell()
+            br.readBytesToString(4).replace("\0", "")
+            self.size = br.readUInt()
+            self.unk1 = br.readUShort()
+            self.count1 = br.readUShort()
+            br.seek(4, 1)
+            self.size1 = br.readUInt()
+            self.faceBufferSize = br.readUInt()
+            self.vertexBufferSize = br.readUInt()
+            br.seek(4, 1)
+            br.readVector4f()
 
     @property
     def faceBufferOffset(self):
-        return self.size1
+        return 48 + self.size1
     
     @property
     def vertexBufferOffset(self):
         return self.faceBufferOffset + self.faceBufferSize
     
-    class SubMesh:
-        def __init__(self):
-            self.faceBuffer = []
-            self.vertexBuffer = []
+    @property
+    def namesOffset(self):
+        return self.vertexBufferOffset + self.vertexBufferSize
     
+    class Mesh:
+        def __init__(self):
+            self.name: str = ""
+            self.subMeshes = []
+
         class Information:
             def __init__(self, ndviOffset: int):
                 self.ndviOffset = ndviOffset
+                self.nameOffset = 0
                 self.subMeshCount = 0
                 self.bufferInformationsOffset = 0
                 
-                self.bufferInformations = []
+                self.subMeshInformations = []
 
-            def read(self, br: BinaryReader, i: int):
+            def read(self, br: BinaryReader):
                 br.readVector4f()
                 br.readVector4f()
-                if i < 1:
-                    br.readVector4f()
-                br.seek(8, 1)
+                self.nameOffset = br.readUInt()
+                br.seek(4, 1)
                 br.readShort()
                 self.subMeshCount = br.readUShort()
                 self.bufferInformationsOffset = br.readUInt()
                 
                 savePos = br.tell()
 
-                self.readBufferInformations(br)
+                self.readSubMeshInformations(br)
 
                 br.seek(savePos)
 
-            def readBufferInformations(self, br: BinaryReader):
+            def readSubMeshInformations(self, br: BinaryReader):
                 br.seek(self.ndviOffset + self.bufferInformationsOffset, 0)
                 for i in range(self.subMeshCount):
-                    subMeshBufferInformation = NDVI.SubMesh.BufferInformation()
+                    subMeshBufferInformation = NDVI.SubMesh.Information()
                     subMeshBufferInformation.read(br)
-                    self.bufferInformations.append(subMeshBufferInformation)
+                    self.subMeshInformations.append(subMeshBufferInformation)
     
-        class BufferInformation:
+    class SubMesh:
+        def __init__(self):
+            self.faceBuffer = []
+            self.vertexBuffer = {
+                "positions" : [],
+                "colors" : [],
+                "normals" : [],
+                "texCoords" : []
+            }
+
+        class Information:
             def __init__(self):
                 self.faceOffset = 0
                 self.vertexOffset = 0
@@ -71,15 +102,19 @@ class NDVI:
                 self.offset1 = br.readUInt()
                 self.unk1 = br.readUInt()
                 br.seek(8, 1)
-                self.faceCount = br.readUShort()
+                self.faceCount = br.readUInt()
                 br.seek(12, 1)
 
-        def readFaceBuffer(self, br: BinaryReader, bufferInformation: BufferInformation):
-            for i in range(bufferInformation.faceCount):
+        def readFaceBuffer(self, br: BinaryReader, subMeshInformation: Information):
+            for i in range(subMeshInformation.faceCount):
                 self.faceBuffer.append(br.readUShort())
 
-        def readVertexBuffer(self, br: BinaryReader, bufferInformation: BufferInformation):
-            pass
+        def readVertexBuffer(self, br: BinaryReader, subMeshInformation: Information):
+            for i in range(subMeshInformation.vertexCount):
+                self.vertexBuffer["positions"].append([br.readFloat(), br.readFloat(), br.readFloat()])
+                br.seek(12, 1)
+                if subMeshInformation.stride == 0x1206:
+                    self.vertexBuffer["colors"].append([br.readByte() / 127, br.readByte() / 127, br.readByte() / 127, br.readByte() / 127])
 
     def read(self, br: BinaryReader):
         self.ndviOffset = br.tell()
@@ -92,24 +127,36 @@ class NDVI:
         self.faceBufferSize = br.readUInt()
         self.vertexBufferSize = br.readUInt()
         br.seek(4, 1)
+        br.readVector4f()
 
         for i in range(self.count1):
-            subMeshInformation = NDVI.SubMesh.Information(self.ndviOffset)
-            subMeshInformation.read(br, i)
-            self.subMeshInformations.append(subMeshInformation)
+            meshInformation = NDVI.Mesh.Information(self.ndviOffset)
+            meshInformation.read(br)
+            self.meshInformations.append(meshInformation)
 
-        self.readSubMeshs(br)
+        self.readMeshes(br)
+
+        print("Read all mesh of NDVI")
             
-    def readSubMeshs(self, br: BinaryReader):
-        information : NDVI.SubMesh.Information
-        for information in self.subMeshInformations:
-            bufferInformation : NDVI.SubMesh.BufferInformation
-            for bufferInformation in information.bufferInformations:
+    def readMeshes(self, br: BinaryReader):
+        meshInformation : NDVI.Mesh.Information
+        for meshInformation in self.meshInformations:
+            mesh = NDVI.Mesh()
+
+            subMeshInformation : NDVI.SubMesh.Information
+            for subMeshInformation in meshInformation.subMeshInformations:
                 subMesh = NDVI.SubMesh()
 
-                br.seek(self.ndviOffset + self.faceBufferOffset + bufferInformation.faceOffset)
-                subMesh.readFaceBuffer(br, bufferInformation)
-                br.seek(self.ndviOffset + self.vertexBufferOffset + bufferInformation.vertexOffset)
-                subMesh.readVertexBuffer(br, bufferInformation)
+                br.seek(self.ndviOffset + self.faceBufferOffset + subMeshInformation.faceOffset)
+                subMesh.readFaceBuffer(br, subMeshInformation)
+                br.seek(self.ndviOffset + self.vertexBufferOffset + subMeshInformation.vertexOffset)
+                subMesh.readVertexBuffer(br, subMeshInformation)
+
+                mesh.subMeshes.append(subMesh)
             
-                self.subMeshes.append(subMesh)
+            br.seek(self.ndviOffset + self.namesOffset + meshInformation.nameOffset)
+            mesh.name = br.readString()
+
+            self.meshes.append(mesh)
+
+            
