@@ -16,8 +16,7 @@ from bpy_extras.io_utils import (
 from ...Utilities import *
 from ..utils.ImportModelRidgeRacer6 import *
 from ..utils.ImportModelRidgeRacer7 import *
-
-from ...Formats.RidgeRacerVita.rnc import *
+from ..utils.ImportModelRidgeRacerVita import *
 
 class RR_OT_Model_Import(Operator, ImportHelper):
         """Load a Ridge Racer model file"""
@@ -81,5 +80,6 @@ def importModel(filepath: str, clear_scene: bool):
         br.endian = "<"
         rnc = RNC()
         rnc.read(br)
+        buildRNC(rnc, filename)
     
     return {'FINISHED'}
