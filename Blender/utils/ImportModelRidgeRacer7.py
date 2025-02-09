@@ -92,8 +92,6 @@ def build_arcl_hierarchy(data: ARCL, mapInfos: MAP = None):
                 meshGroupEmpty.location = transformationMatrix.translation
             build_r7o(None, r7m.r7o, meshGroupEmpty, None, meshGroup.startIndex, meshGroup.endIndex)
 
-
-
 def build_r7o(lod: str, submesh: R7O, part_empty, count: int, startIndex = 0, endIndex = 0):
 
     endIndex = len(submesh.vertexBuffers) if endIndex == 0 else endIndex
