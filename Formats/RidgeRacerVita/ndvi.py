@@ -1,7 +1,9 @@
 from ...Utilities.binaryReader import BinaryReader
 
 class NDVI:
-    def __init__(self):
+    def __init__(self, offset):
+        self.offset = offset
+
         self.size = 0
         self.unk1 = 0
         self.count1 = 0
@@ -10,10 +12,10 @@ class NDVI:
         self.meshes = []
 
     class Header:
-        def __init__(self):
-            pass
+        def __init__(self, offset):
+            self.offset = offset
 
-        def read(self, br):
+        def read(self, br: BinaryReader):
             self.ndviOffset = br.tell()
             br.readBytesToString(4).replace("\0", "")
             self.size = br.readUInt()
@@ -112,11 +114,13 @@ class NDVI:
         def readVertexBuffer(self, br: BinaryReader, subMeshInformation: Information):
             for i in range(subMeshInformation.vertexCount):
                 self.vertexBuffer["positions"].append([br.readFloat(), br.readFloat(), br.readFloat()])
-                br.seek(12, 1)
+                br.seek(8, 1)
+                self.vertexBuffer["texCoords"].append([br.readUShort() / 65535, br.readUShort() / 65535])
                 if subMeshInformation.stride == 0x1206:
                     self.vertexBuffer["colors"].append([br.readByte() / 127, br.readByte() / 127, br.readByte() / 127, br.readByte() / 127])
 
     def read(self, br: BinaryReader):
+        br.seek(self.offset)
         self.ndviOffset = br.tell()
         br.readBytesToString(4).replace("\0", "")
         self.size = br.readUInt()

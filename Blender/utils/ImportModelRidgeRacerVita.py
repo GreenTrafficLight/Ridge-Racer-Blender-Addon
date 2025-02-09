@@ -13,68 +13,84 @@ def buildRNC(rnc: RNC, emptyParentName: str):
 
     emptyParent = add_empty(emptyParentName, empty_rotation=(radians(90), 0, 0))
 
-    ndvi: NDVI
-    for ndvi in rnc.ndviList:
+    lodData: RNC.LOD
+    for lod, lodData  in rnc.lods.items():
+        
+        lodEmpty = add_empty(lod, emptyParent)
 
-        mesh: NDVI.Mesh
-        for mesh in ndvi.meshes:
+        ndvi: NDVI
+        for ndvi in lodData.ndviList:
+            buildNDVI(ndvi, lodEmpty)
 
-            meshName = mesh.name
-            meshEmpty = add_empty(meshName, emptyParent)
+def buildNDVI(ndvi: NDVI, emptyParent):
+    mesh: NDVI.Mesh
+    for mesh in ndvi.meshes:
 
-            subMesh: NDVI.SubMesh
-            for subMeshIndex, subMesh in enumerate(mesh.subMeshes):
+        meshName = mesh.name
+        meshEmpty = add_empty(meshName, emptyParent)
 
-                subMeshName = f'{meshName}_{subMeshIndex}'
+        subMesh: NDVI.SubMesh
+        for subMeshIndex, subMesh in enumerate(mesh.subMeshes):
 
-                mesh = bpy.data.meshes.new(subMeshName)
-                obj = bpy.data.objects.new(subMeshName, mesh)
+            subMeshName = f'{meshName}_{subMeshIndex}'
 
-                if bpy.app.version >= (2, 80, 0):
-                    meshEmpty.users_collection[0].objects.link(obj)
-                else:
-                    meshEmpty.users_collection[0].objects.link(obj)
+            mesh = bpy.data.meshes.new(subMeshName)
+            obj = bpy.data.objects.new(subMeshName, mesh)
 
-                obj.parent = meshEmpty
+            if bpy.app.version >= (2, 80, 0):
+                meshEmpty.users_collection[0].objects.link(obj)
+            else:
+                meshEmpty.users_collection[0].objects.link(obj)
 
-                vertexList = {}
-                facesList = []
-                normals = []
+            obj.parent = meshEmpty
 
-                bm = bmesh.new()
-                bm.from_mesh(mesh)
+            vertexList = {}
+            facesList = []
+            normals = []
 
-                # Set vertices
-                for j in range(len(subMesh.vertexBuffer["positions"])):
-                    vertex = bm.verts.new(subMesh.vertexBuffer["positions"][j])
-                    
-                    if subMesh.vertexBuffer["normals"] != []:
-                        vertex.normal = subMesh.vertexBuffer["normals"][j]
-                        normals.append(subMesh.vertexBuffer["normals"][j])
-                    
-                    vertex.index = j
+            bm = bmesh.new()
+            bm.from_mesh(mesh)
 
-                    vertexList[j] = vertex
+            # Set vertices
+            for j in range(len(subMesh.vertexBuffer["positions"])):
+                vertex = bm.verts.new(subMesh.vertexBuffer["positions"][j])
+                
+                if subMesh.vertexBuffer["normals"] != []:
+                    vertex.normal = subMesh.vertexBuffer["normals"][j]
+                    normals.append(subMesh.vertexBuffer["normals"][j])
+                
+                vertex.index = j
 
-                faces = StripToTriangle(subMesh.faceBuffer)     
+                vertexList[j] = vertex
 
-                # Set faces
-                for j in range(0, len(faces)):
-                    try:
-                        face = bm.faces.new([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]])
-                        face.smooth = True
-                    except:
-                        for Face in facesList:
-                            if set([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]) == set(Face[1]):
-                                face = Face[0].copy(verts=False, edges=True)
-                                face.normal_flip()
-                                face.smooth = True
-                                break
+            faces = StripToTriangle(subMesh.faceBuffer)     
 
-                    facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
+            # Set faces
+            for j in range(0, len(faces)):
+                try:
+                    face = bm.faces.new([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]])
+                    face.smooth = True
+                except:
+                    for Face in facesList:
+                        if set([vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]) == set(Face[1]):
+                            face = Face[0].copy(verts=False, edges=True)
+                            face.normal_flip()
+                            face.smooth = True
+                            break
 
-                bm.to_mesh(mesh)
-                bm.free()
+                facesList.append([face, [vertexList[faces[j][0]], vertexList[faces[j][1]], vertexList[faces[j][2]]]])
 
-                if normals != []:
-                    mesh.normals_split_custom_set_from_vertices(normals)
+            # Set uv
+            if subMesh.vertexBuffer["texCoords"] != []:
+                uv_layer1 = bm.loops.layers.uv.verify()
+                for f in bm.faces:
+                    for l in f.loops:
+                        l[uv_layer1].uv =  [subMesh.vertexBuffer["texCoords"][l.vert.index][0], 1 - subMesh.vertexBuffer["texCoords"][l.vert.index][1]]
+
+
+            bm.to_mesh(mesh)
+            bm.free()
+
+            if normals != []:
+                mesh.normals_split_custom_set_from_vertices(normals)
+
